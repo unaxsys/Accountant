@@ -1,11 +1,14 @@
 :root {
-  --bg: #050816;
-  --text: #e9eeff;
-  --muted: #afbbdf;
-  --brand: #6e8dff;
-  --brand-2: #42d3ff;
-  --card: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.14);
+  --bg: #f4f7ff;
+  --bg-soft: #eef4ff;
+  --text: #1b2b49;
+  --muted: #4b5d7f;
+  --brand: #2f63ff;
+  --brand-2: #35a9ff;
+  --card: #ffffff;
+  --border: rgba(34, 72, 153, 0.14);
+  --shadow: 0 14px 40px rgba(30, 69, 150, 0.1);
+  --soft-shadow: 0 8px 24px rgba(38, 74, 151, 0.1);
 }
 
 * {
@@ -16,73 +19,51 @@ body {
   margin: 0;
   font-family: "Manrope", system-ui, -apple-system, sans-serif;
   color: var(--text);
-  background: radial-gradient(1200px 600px at 70% -10%, #1b2b5f 0%, transparent 60%), var(--bg);
+  background: linear-gradient(140deg, #f9fbff 0%, #eef4ff 45%, #f5f9ff 100%);
   min-height: 100vh;
   line-height: 1.6;
 }
 
-.bg-glow {
-  position: fixed;
-  width: 340px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.35;
-  pointer-events: none;
-}
-
-.bg-glow-left {
-  background: #4b66ff;
-  left: -90px;
-  top: 120px;
-}
-
-.bg-glow-right {
-  background: #00ccff;
-  right: -100px;
-  bottom: 80px;
-}
-
-/* Лесни настройки за позицията и размера на логото */
 :root {
-  --header-top-offset: 0rem; /* Отстояние на хедъра от горния ръб */
-  --logo-left-offset: 0rem; /* Отстояние на логото от левия ръб */
-  --logo-width: clamp(120px, 14vw, 170px); /* Базова ширина на логото (преди мащаб) */
-  --logo-scale: 2; /* Мащаб на самото изображение: 1 = 100%, 4 = 400% */
-  --header-logo-gap: 0.25rem; /* Разстояние между логото и хедъра */
+  --header-top-offset: 0rem;
+  --logo-left-offset: 0.2rem;
+  --logo-width: clamp(120px, 14vw, 170px);
+  --logo-scale: 2;
+  --header-logo-gap: 0.35rem;
 }
 
 .site-header,
 main,
 footer {
-  width: min(1100px, calc(100% - 2rem));
+  width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;
 }
 
 .site-header {
   position: sticky;
   top: var(--header-top-offset);
-  z-index: 10;
-  margin-top: var(--header-top-offset);
-  margin-left: calc(var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap)); /* Пази място според реалния видим размер на логото */
+  z-index: 15;
+  margin-top: 0.3rem;
+  margin-left: calc(var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap));
   width: min(
-    1100px,
+    1120px,
     calc(100% - 1rem - (var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap)))
-  ); /* Свива хедъра, за да не влиза под логото */
-  padding: 0.85rem 1.1rem;
-  backdrop-filter: blur(14px);
-  border: 0px solid var(--border);
+  );
+  padding: 0.75rem 1.1rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: 16px;
-  background: rgba(8, 12, 29, 0.75);
+  background: rgba(248, 252, 255, 0.8);
+  box-shadow: var(--soft-shadow);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 1rem;
 }
 
 .corner-logo {
   position: fixed;
-  top: var(--header-top-offset);
+  top: 0.1rem;
   left: var(--logo-left-offset);
   z-index: 20;
   display: inline-flex;
@@ -94,51 +75,174 @@ footer {
   width: var(--logo-width);
   height: auto;
   display: inline-flex;
-  overflow: visible; /* Позволява лого на 400% да се вижда извън контейнера */
+  overflow: visible;
 }
 
 .logo-mark img {
-  width: 100%; /* Базова ширина, контролира се от --logo-width */
-  max-width: none; /* Важно при по-голям мащаб (напр. 400%) */
-  transform: scale(var(--logo-scale)); /* Реално уголемява/смалява логото */
-  transform-origin: top left; /* Логото расте надясно/надолу от горе-ляво */
+  width: 100%;
+  max-width: none;
+  transform: scale(var(--logo-scale));
+  transform-origin: top left;
   height: auto;
   object-fit: contain;
-  filter:
-    drop-shadow(0 0 12px rgba(66, 211, 255, 0.6))
-    drop-shadow(0 0 24px rgba(110, 141, 255, 0.4));
 }
 
-nav {
+.menu-toggle {
+  display: none;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 10px;
+  width: 2.3rem;
+  height: 2.3rem;
+  color: var(--text);
+}
+
+.main-nav {
   display: flex;
   gap: 1rem;
+  align-items: center;
 }
 
-nav a {
+.main-nav a,
+.dropdown-toggle {
   color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.main-nav a:hover,
+.dropdown-toggle:hover {
+  color: var(--text);
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 1.8rem;
+  left: 0;
+  min-width: 180px;
+  padding: 0.6rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--soft-shadow);
+  display: grid;
+  gap: 0.4rem;
+  opacity: 0;
+  transform: translateY(5px);
+  pointer-events: none;
+  transition: 0.2s ease;
+}
+
+.nav-dropdown:hover .dropdown-menu,
+.nav-dropdown:focus-within .dropdown-menu {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.dropdown-menu a {
+  padding: 0.35rem 0.45rem;
+  border-radius: 8px;
+}
+
+.dropdown-menu a:hover {
+  background: var(--bg-soft);
+}
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: -320px;
+  width: min(82vw, 300px);
+  height: 100vh;
+  background: #fff;
+  z-index: 30;
+  box-shadow: -12px 0 36px rgba(15, 36, 78, 0.22);
+  transition: right 0.24s ease;
+  padding: 1rem;
+}
+
+.mobile-drawer.open {
+  right: 0;
+}
+
+.drawer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.drawer-close {
+  border: 0;
+  background: transparent;
+  font-size: 1.2rem;
+}
+
+.drawer-nav {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.drawer-nav a {
+  color: var(--text);
   text-decoration: none;
   font-weight: 600;
 }
 
-nav a:hover {
-  color: var(--text);
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  background: rgba(12, 28, 66, 0.25);
 }
 
 main {
-  padding-top: 3rem;
+  padding-top: 2.4rem;
 }
 
 .hero {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 420px;
+  display: grid;
+  place-items: center;
   text-align: center;
+  background-image: url("https://images.unsplash.com/photo-1554224154-26032ffc0d07?auto=format&fit=crop&w=1920&q=80");
+  background-size: cover;
+  background-position: center;
+  box-shadow: var(--shadow);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(242, 247, 255, 0.82), rgba(225, 239, 255, 0.65));
+}
+
+.hero-content {
+  position: relative;
+  max-width: 760px;
+  padding: 2rem 1.5rem;
 }
 
 .tag {
   display: inline-block;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  background: rgba(110, 141, 255, 0.2);
-  border: 1px solid rgba(110, 141, 255, 0.4);
-  color: #cbd8ff;
+  background: rgba(47, 99, 255, 0.12);
+  border: 1px solid rgba(47, 99, 255, 0.28);
+  color: #1e4ab8;
   font-size: 0.85rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -158,10 +262,14 @@ h1 {
   max-width: 12ch;
 }
 
-.subtitle {
+.subtitle,
+.card p,
+.about p,
+.contact p,
+.section-list,
+.cards .card ul,
+.stats p {
   color: var(--muted);
-  max-width: 70ch;
-  margin: 0 auto;
 }
 
 .hero-actions {
@@ -174,7 +282,7 @@ h1 {
 
 .btn {
   text-decoration: none;
-  color: #05102b;
+  color: #ffffff;
   background: linear-gradient(135deg, var(--brand), var(--brand-2));
   padding: 0.75rem 1.2rem;
   border-radius: 12px;
@@ -189,7 +297,7 @@ h1 {
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.82);
   color: var(--text);
   border: 1px solid var(--border);
 }
@@ -198,36 +306,7 @@ h1 {
   padding: 0.55rem 0.9rem;
 }
 
-.stats {
-  margin-top: 2rem;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.9rem;
-}
-
-.stats article,
-.card,
-.about,
-.contact {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  backdrop-filter: blur(6px);
-}
-
-.stats article {
-  padding: 1rem;
-}
-
-.stats h3 {
-  font-size: clamp(1.2rem, 4vw, 1.7rem);
-}
-
-.stats p {
-  margin: 0.2rem 0 0;
-  color: var(--muted);
-}
-
+.stats,
 .cards {
   margin-top: 2rem;
   display: grid;
@@ -235,16 +314,65 @@ h1 {
   gap: 1rem;
 }
 
-.card {
+.stats article,
+.card,
+.about,
+.contact,
+.testimonial-card,
+.faq-item,
+.cta-strip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--soft-shadow);
+}
+
+.stats article,
+.card,
+.testimonial-card,
+.faq-item {
   padding: 1.15rem;
 }
 
-.card p {
-  color: var(--muted);
+.service-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.service-card img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.cards .card ul {
+  margin: 0.7rem 0 0;
+  padding-left: 1.15rem;
+}
+
+.cards .card li {
+  margin-bottom: 0.4rem;
+}
+
+.cta-strip {
+  margin-top: 2rem;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.about,
+.process,
+.testimonials,
+.faq,
+.contact {
+  margin-top: 2rem;
 }
 
 .about {
-  margin-top: 2rem;
   padding: 1.5rem;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
@@ -257,10 +385,6 @@ h1 {
   font-size: clamp(1.4rem, 3vw, 2.2rem);
 }
 
-.about p {
-  color: var(--muted);
-}
-
 .about ul {
   list-style: none;
   padding: 0;
@@ -270,56 +394,68 @@ h1 {
   font-weight: 600;
 }
 
-.contact {
-  margin: 2rem 0;
-  padding: 1.5rem;
-  text-align: center;
-}
-
-.contact p {
-  color: var(--muted);
-}
-
-
-.cards .card ul {
-  margin: 0.7rem 0 0;
-  padding-left: 1.15rem;
-  color: var(--muted);
-}
-
-.cards .card li {
-  margin-bottom: 0.4rem;
-}
-
-.section-box,
-.process,
-.faq {
-  margin-top: 2rem;
-}
-
-.section-box {
-  padding: 1.5rem;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  backdrop-filter: blur(6px);
-}
-
-.section-list {
-  margin: 1rem 0 0;
-  padding-left: 1.2rem;
-  color: var(--muted);
-  display: grid;
-  gap: 0.45rem;
-}
-
 .process h2,
+.testimonials h2,
 .faq h2 {
   margin-bottom: 1rem;
 }
 
+.testimonials {
+  text-align: center;
+}
+
+.testimonial-card p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.testimonial-card strong {
+  margin-top: 0.7rem;
+  display: block;
+  color: #254eab;
+}
+
+.testimonial-controls {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.faq-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.faq-question {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.faq-item.active .faq-answer {
+  max-height: 220px;
+}
+
+.contact {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  text-align: center;
+}
+
 .contact a {
-  color: var(--brand-2);
+  color: #1e5dce;
   text-decoration: none;
   font-weight: 700;
 }
@@ -332,14 +468,13 @@ h1 {
   width: min(560px, calc(100% - 2rem));
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: #0a1433;
+  background: #ffffff;
   color: var(--text);
   padding: 0;
 }
 
 .quote-dialog::backdrop {
-  background: rgba(4, 8, 20, 0.7);
-  backdrop-filter: blur(3px);
+  background: rgba(14, 30, 68, 0.28);
 }
 
 .quote-form {
@@ -355,11 +490,11 @@ h1 {
 }
 
 .close-btn {
-  border: 0;
+  border: 1px solid var(--border);
   border-radius: 10px;
   width: 2rem;
   height: 2rem;
-  background: rgba(255, 255, 255, 0.12);
+  background: #fff;
   color: var(--text);
   cursor: pointer;
 }
@@ -368,24 +503,24 @@ h1 {
   display: grid;
   gap: 0.35rem;
   font-weight: 600;
-  color: #d2ddff;
+  color: #27426f;
 }
 
 .quote-form input,
 .quote-form select,
 .quote-form textarea {
-  border: 1px solid #2f4378;
+  border: 1px solid #b6c9ec;
   border-radius: 10px;
   padding: 0.6rem 0.7rem;
   font: inherit;
   color: var(--text);
-  background: #0f1c42;
+  background: #f9fbff;
 }
 
 .form-note {
   min-height: 1.2rem;
   margin: 0;
-  color: #7dffc6;
+  color: #238454;
   font-weight: 600;
 }
 
@@ -395,17 +530,26 @@ footer {
   text-align: center;
 }
 
-@media (max-width: 850px) {
-  nav {
+@media (max-width: 980px) {
+  :root {
+    --header-top-offset: 0.3rem;
+    --logo-left-offset: 0.65rem;
+    --logo-width: clamp(110px, 30vw, 145px);
+    --logo-scale: 2.45;
+    --header-logo-gap: 0.65rem;
+  }
+
+  .site-header {
+    padding-inline: 0.85rem;
+  }
+
+  .main-nav {
     display: none;
   }
 
-  :root {
-    --header-top-offset: 0.5rem; /* По-малко отстояние на мобилно */
-    --logo-left-offset: 0.8rem; /* По-малко отстояние вляво на мобилно */
-    --logo-width: clamp(105px, 30vw, 145px); /* Базова ширина на логото на мобилно */
-    --logo-scale: 2.7; /* По-нисък мащаб на мобилно, за да не заема целия екран */
-    --header-logo-gap: 0.8rem; /* Дистанция лого/хедър на мобилно */
+  .menu-toggle {
+    display: inline-grid;
+    place-items: center;
   }
 
   .stats,
@@ -414,4 +558,8 @@ footer {
     grid-template-columns: 1fr;
   }
 
+  .cta-strip {
+    flex-direction: column;
+    text-align: center;
+  }
 }

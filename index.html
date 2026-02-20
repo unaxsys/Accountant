@@ -17,85 +17,123 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="bg-glow bg-glow-left"></div>
-    <div class="bg-glow bg-glow-right"></div>
-
     <a href="#" class="corner-logo" aria-label="Магос ЕООД начало">
       <span class="logo-mark" aria-hidden="true">
         <img src="magos-logo.png" alt="Магос ЕООД" onerror="this.onerror=null;this.src='magos-logo.svg';" />
       </span>
     </a>
 
-    <header class="site-header">
-      <nav>
+    <header class="site-header" id="site-header">
+      <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Отвори меню" aria-expanded="false">☰</button>
+      <nav class="main-nav" aria-label="Главно меню">
         <a href="#services">Услуги</a>
+        <div class="nav-dropdown">
+          <button type="button" class="dropdown-toggle" aria-expanded="false">Решения ▾</button>
+          <div class="dropdown-menu">
+            <a href="#process">Как започваме</a>
+            <a href="#testimonials">Мнения</a>
+            <a href="#faq">FAQ</a>
+          </div>
+        </div>
         <a href="#about">За нас</a>
-        <a href="#trust">Доверие</a>
         <a href="#contact">Контакт</a>
       </nav>
       <button class="btn btn-small quote-open" type="button">Запитване</button>
     </header>
 
+    <aside class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+      <div class="drawer-head">
+        <strong>Меню</strong>
+        <button class="drawer-close" id="drawer-close" aria-label="Затвори меню">✕</button>
+      </div>
+      <nav class="drawer-nav">
+        <a href="#services">Услуги</a>
+        <a href="#process">Как започваме</a>
+        <a href="#testimonials">Мнения</a>
+        <a href="#faq">FAQ</a>
+        <a href="#about">За нас</a>
+        <a href="#contact">Контакт</a>
+      </nav>
+    </aside>
+    <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+
     <main>
       <section class="hero">
-        <p class="tag">СЧЕТОВОДСТВО ОТ НОВО ПОКОЛЕНИЕ</p>
-        <h1>Финансова яснота за смелия бизнес.</h1>
-        <p class="subtitle">
-          Счетоводно обслужване, ДДС и ТРЗ с ясни срокове и постоянна комуникация.
-          Поемаме документацията, за да се фокусирате върху растежа на вашия бизнес.
-        </p>
-        <div class="hero-actions">
-          <button class="btn quote-open" type="button">Безплатна консултация</button>
-          <a href="#contact" class="btn btn-ghost">Вземи оферта до 24 часа</a>
-        </div>
-
-        <div class="stats">
-          <article>
-            <h3>Оферта до 24 ч.</h3>
-            <p>бърз старт без губене на време</p>
-          </article>
-          <article>
-            <h3>Ясни срокове</h3>
-            <p>контрол на ДДС и задължения към НАП</p>
-          </article>
-          <article>
-            <h3>Персонален контакт</h3>
-            <p>директна връзка, без “прехвърляния”</p>
-          </article>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <p class="tag">СЧЕТОВОДСТВО ОТ НОВО ПОКОЛЕНИЕ</p>
+          <h1>Финансова яснота за смелия бизнес.</h1>
+          <p class="subtitle">
+            Счетоводно обслужване, ДДС и ТРЗ с ясни срокове и постоянна комуникация.
+            Поемаме документацията, за да се фокусирате върху растежа на вашия бизнес.
+          </p>
+          <div class="hero-actions">
+            <button class="btn quote-open" type="button">Безплатна консултация</button>
+            <a href="#contact" class="btn btn-ghost">Вземи оферта до 24 часа</a>
+          </div>
         </div>
       </section>
 
+      <section class="stats">
+        <article>
+          <h3>Оферта до 24 ч.</h3>
+          <p>бърз старт без губене на време</p>
+        </article>
+        <article>
+          <h3>Ясни срокове</h3>
+          <p>контрол на ДДС и задължения към НАП</p>
+        </article>
+        <article>
+          <h3>Персонален контакт</h3>
+          <p>директна връзка, без “прехвърляния”</p>
+        </article>
+      </section>
+
       <section class="cards" id="services">
-        <article class="card">
-          <h3>Пълно счетоводно обслужване</h3>
-          <p>Цялостна счетоводна грижа с ясно проследяване на всеки етап.</p>
-          <ul>
-            <li>Осчетоводяване на първични документи</li>
-            <li>ДДС декларации и справки</li>
-            <li>Годишно приключване и ГФО</li>
-            <li>Месечни финансови отчети и контрол</li>
-          </ul>
+        <article class="card service-card">
+          <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=80" alt="Счетоводни документи" />
+          <div>
+            <h3>Пълно счетоводно обслужване</h3>
+            <p>Цялостна счетоводна грижа с ясно проследяване на всеки етап.</p>
+            <ul>
+              <li>Осчетоводяване на първични документи</li>
+              <li>ДДС декларации и справки</li>
+              <li>Годишно приключване и ГФО</li>
+              <li>Месечни финансови отчети и контрол</li>
+            </ul>
+          </div>
         </article>
-        <article class="card">
-          <h3>ТРЗ и личен състав</h3>
-          <p>Навременно администриране на персонал и възнаграждения без пропуски.</p>
-          <ul>
-            <li>Трудови договори и анекси</li>
-            <li>Заплати и осигуровки</li>
-            <li>Подаване на декларации към НАП и НОИ</li>
-            <li>Болнични, отпуски и справки</li>
-          </ul>
+        <article class="card service-card">
+          <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1200&q=80" alt="ТРЗ и управление на екип" />
+          <div>
+            <h3>ТРЗ и личен състав</h3>
+            <p>Навременно администриране на персонал и възнаграждения без пропуски.</p>
+            <ul>
+              <li>Трудови договори и анекси</li>
+              <li>Заплати и осигуровки</li>
+              <li>Подаване на декларации към НАП и НОИ</li>
+              <li>Болнични, отпуски и справки</li>
+            </ul>
+          </div>
         </article>
-        <article class="card">
-          <h3>Данъчни и финансови консултации</h3>
-          <p>Практични решения за устойчив растеж и намаляване на риска.</p>
-          <ul>
-            <li>Данъчно планиране и оптимизация</li>
-            <li>Консултации при стартиране на бизнес</li>
-            <li>Представителство пред институции</li>
-            <li>Подготовка при проверки и ревизии</li>
-          </ul>
+        <article class="card service-card">
+          <img src="https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1200&q=80" alt="Финансови анализи" />
+          <div>
+            <h3>Данъчни и финансови консултации</h3>
+            <p>Практични решения за устойчив растеж и намаляване на риска.</p>
+            <ul>
+              <li>Данъчно планиране и оптимизация</li>
+              <li>Консултации при стартиране на бизнес</li>
+              <li>Представителство пред институции</li>
+              <li>Подготовка при проверки и ревизии</li>
+            </ul>
+          </div>
         </article>
+      </section>
+
+      <section class="cta-strip">
+        <p>Нуждаете се от бърза и точна счетоводна помощ?</p>
+        <button class="btn quote-open" type="button">Изпратете запитване</button>
       </section>
 
       <section class="about" id="about">
@@ -113,16 +151,6 @@
           <li>✔ Дигитален обмен на документи</li>
           <li>✔ Персонален експерт за всеки клиент</li>
           <li>✔ Ясни месечни справки и анализи</li>
-        </ul>
-      </section>
-
-      <section class="section-box" id="trust">
-        <h2>Защо да изберете Магос ЕООД?</h2>
-        <ul class="section-list">
-          <li>Персонално отношение към всеки клиент</li>
-          <li>Ясни срокове и контрол на задълженията към НАП</li>
-          <li>Пълна конфиденциалност и сигурност на данните</li>
-          <li>Прозрачно и коректно ценообразуване</li>
         </ul>
       </section>
 
@@ -144,32 +172,50 @@
         </div>
       </section>
 
+      <section class="testimonials" id="testimonials">
+        <h2>Какво казват нашите клиенти</h2>
+        <article class="testimonial-card">
+          <p id="testimonial-text"></p>
+          <strong id="testimonial-author"></strong>
+        </article>
+        <div class="testimonial-controls">
+          <button class="btn btn-ghost" id="testimonial-prev" type="button">← Предишно</button>
+          <button class="btn" id="testimonial-next" type="button">Следващо →</button>
+        </div>
+      </section>
+
       <section class="faq" id="faq">
         <h2>Често задавани въпроси</h2>
-        <div class="cards">
-          <article class="card">
-            <h3>Колко струва услугата?</h3>
-            <p>
-              Цената зависи от обем документи, брой служители, ДДС регистрация и сложност на
-              дейността. Изготвяме оферта до 24 часа.
-            </p>
+        <div class="faq-list">
+          <article class="faq-item">
+            <button class="faq-question" type="button">Колко струва услугата?</button>
+            <div class="faq-answer">
+              <p>
+                Цената зависи от обем документи, брой служители, ДДС регистрация и сложност на
+                дейността. Изготвяме оферта до 24 часа.
+              </p>
+            </div>
           </article>
-          <article class="card">
-            <h3>Работите ли дистанционно?</h3>
-            <p>Да. Възможна е изцяло дистанционна организация с електронен обмен на документи.</p>
+          <article class="faq-item">
+            <button class="faq-question" type="button">Работите ли дистанционно?</button>
+            <div class="faq-answer">
+              <p>Да. Възможна е изцяло дистанционна организация с електронен обмен на документи.</p>
+            </div>
           </article>
-          <article class="card">
-            <h3>Поемате ли ТРЗ и личен състав?</h3>
-            <p>
-              Да — договори, заплати, осигуровки, декларации към НАП/НОИ, болнични и отпуски.
-            </p>
+          <article class="faq-item">
+            <button class="faq-question" type="button">Поемате ли ТРЗ и личен състав?</button>
+            <div class="faq-answer">
+              <p>Да — договори, заплати, осигуровки, декларации към НАП/НОИ, болнични и отпуски.</p>
+            </div>
           </article>
-          <article class="card">
-            <h3>Какво включва годишното приключване?</h3>
-            <p>
-              Изготвяне на годишни отчети и ГФО според изискванията, с подготовка на необходимите
-              документи.
-            </p>
+          <article class="faq-item">
+            <button class="faq-question" type="button">Какво включва годишното приключване?</button>
+            <div class="faq-answer">
+              <p>
+                Изготвяне на годишни отчети и ГФО според изискванията, с подготовка на необходимите
+                документи.
+              </p>
+            </div>
           </article>
         </div>
       </section>
