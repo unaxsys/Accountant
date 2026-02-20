@@ -80,6 +80,7 @@ footer {
   width: clamp(220px, 24vw, 320px);
   height: 64px;
   display: inline-flex;
+  overflow: visible;
 }
 
 .corner-logo {
