@@ -44,20 +44,16 @@ footer {
   top: var(--header-top-offset);
   z-index: 15;
   margin-top: 0.3rem;
-  margin-left: calc(var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap));
-  width: min(
-    1120px,
-    calc(100% - 1rem - (var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap)))
-  );
+  width: min(1120px, calc(100% - 2rem));
   padding: 0.75rem 1.1rem;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.65);
   border-radius: 16px;
   background: rgba(248, 252, 255, 0.8);
   box-shadow: var(--soft-shadow);
-  display: flex;
+  display: grid;
+  grid-template-columns: clamp(190px, 20vw, 260px) 1fr clamp(190px, 20vw, 260px);
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
 }
 
@@ -101,6 +97,19 @@ footer {
   display: flex;
   gap: 1rem;
   align-items: center;
+  justify-self: center;
+}
+
+.header-phone {
+  justify-self: end;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.header-phone:hover {
+  color: var(--brand);
 }
 
 .main-nav a,
@@ -541,9 +550,15 @@ footer {
 
   .site-header {
     padding-inline: 0.85rem;
+    display: flex;
+    justify-content: space-between;
   }
 
   .main-nav {
+    display: none;
+  }
+
+  .header-phone {
     display: none;
   }
 
