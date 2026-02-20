@@ -43,7 +43,7 @@ footer {
   position: sticky;
   top: var(--header-top-offset);
   z-index: 15;
-  margin-top: 0.3rem;
+  margin-top: 0.2rem;
   margin-left: calc(var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap));
   width: min(
     1410px,
