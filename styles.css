@@ -67,18 +67,19 @@ footer {
 }
 
 .corner-logo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  padding: 0.8rem 1rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
   text-decoration: none;
-  color: var(--text);
-  font-weight: 800;
-  letter-spacing: 0.2px;
 }
 
 .logo-mark {
-  width: clamp(220px, 24vw, 320px);
-  height: 64px;
+  width: clamp(140px, 18vw, 200px);
+  height: auto;
   display: inline-flex;
   overflow: visible;
 }
@@ -90,13 +91,14 @@ footer {
   z-index: 20;
 }
 
-.logo-mark svg,
 .logo-mark img {
-  width: 100%;
-  height: 100%;
+  width: 400%;
+  max-width: none;
+  height: auto;
   object-fit: contain;
-  transform: none;
-  filter: drop-shadow(0 8px 16px rgba(66, 211, 255, 0.28));
+  filter:
+    drop-shadow(0 0 12px rgba(66, 211, 255, 0.6))
+    drop-shadow(0 0 24px rgba(110, 141, 255, 0.4));
 }
 
 nav {
@@ -391,13 +393,13 @@ footer {
   }
 
   .corner-logo {
-    top: 0.65rem;
-    left: 0.75rem;
+    top: 0;
+    left: 0;
+    padding: 0.65rem 0.75rem;
   }
 
   .logo-mark {
-    width: 180px;
-    height: 46px;
+    width: clamp(120px, 34vw, 160px);
   }
 
   .stats,
