@@ -71,7 +71,7 @@ footer {
   ); /* Свива хедъра, за да не влиза под логото */
   padding: 0.85rem 1.1rem;
   backdrop-filter: blur(14px);
-  border: 1px solid var(--border);
+  border: 0px solid var(--border);
   border-radius: 16px;
   background: rgba(8, 12, 29, 0.75);
   display: flex;
