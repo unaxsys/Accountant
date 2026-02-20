@@ -77,8 +77,8 @@ footer {
 }
 
 .logo-mark {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: clamp(150px, 21vw, 250px);
+  height: 52px;
   display: inline-flex;
 }
 
@@ -86,15 +86,8 @@ footer {
 .logo-mark img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   filter: drop-shadow(0 8px 16px rgba(66, 211, 255, 0.28));
-}
-
-.logo-text {
-  white-space: nowrap;
-}
-
-.logo span {
-  color: var(--brand-2);
 }
 
 nav {
@@ -386,6 +379,11 @@ footer {
 @media (max-width: 850px) {
   nav {
     display: none;
+  }
+
+  .logo-mark {
+    width: 170px;
+    height: 42px;
   }
 
   .stats,
