@@ -77,9 +77,10 @@ footer {
 }
 
 .logo-mark {
-  width: clamp(150px, 21vw, 250px);
-  height: 52px;
+  width: clamp(220px, 28vw, 360px);
+  height: 72px;
   display: inline-flex;
+  overflow: visible;
 }
 
 .logo-mark svg,
@@ -87,6 +88,8 @@ footer {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transform: scale(1.75);
+  transform-origin: left center;
   filter: drop-shadow(0 8px 16px rgba(66, 211, 255, 0.28));
 }
 
@@ -382,8 +385,13 @@ footer {
   }
 
   .logo-mark {
-    width: 170px;
-    height: 42px;
+    width: 220px;
+    height: 56px;
+  }
+
+  .logo-mark svg,
+  .logo-mark img {
+    transform: scale(1.35);
   }
 
   .stats,
