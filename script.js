@@ -44,31 +44,29 @@ closeQuoteButton.addEventListener('click', () => {
   quoteDialog.close();
 });
 
-quoteForm.addEventListener('submit', (event) => {
+quoteForm.addEventListener('submit', async (event) => {
   event.preventDefault();
 
-  const formData = new FormData(quoteForm);
-  const subject = `Запитване за оферта от ${formData.get('name')}`;
-  const body = [
-    `Име и фамилия: ${formData.get('name')}`,
-    `Фирма: ${formData.get('company')}`,
-    `Имейл: ${formData.get('email')}`,
-    `Телефон: ${formData.get('phone')}`,
-    `Услуга: ${formData.get('service')}`,
-    '',
-    'Описание:',
-    `${formData.get('message') || 'Няма добавено описание.'}`
-  ].join('\n');
+  formNote.textContent = 'Изпращане...';
 
-  window.location.href = `mailto:office@magos.bg?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  try {
+    const response = await fetch('send.php', {
+      method: 'POST',
+      body: new FormData(quoteForm)
+    });
 
-  formNote.textContent = 'Отваряме вашия имейл клиент, за да изпратите запитването към office@magos.bg.';
-  quoteForm.reset();
+    const result = await response.json();
+    formNote.textContent = result.message || 'Възникна непредвидена грешка.';
 
-  setTimeout(() => {
-    quoteDialog.close();
-    formNote.textContent = '';
-  }, 1800);
+    if (response.ok && result.ok) {
+      quoteForm.reset();
+      setTimeout(() => {
+        quoteDialog.close();
+      }, 1800);
+    }
+  } catch (error) {
+    formNote.textContent = 'Няма връзка със сървъра. Моля, опитайте отново.';
+  }
 });
 
 function openDrawer() {
