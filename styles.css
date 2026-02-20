@@ -35,7 +35,7 @@ body {
 .site-header,
 main,
 footer {
-  width: min(1410px, calc(100% - 2rem));
+  width: min(1410px, calc(100% - 1rem));
   margin: 0 auto;
 }
 
