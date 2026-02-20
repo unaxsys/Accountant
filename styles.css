@@ -43,6 +43,15 @@ body {
   bottom: 80px;
 }
 
+/* Лесни настройки за позицията и размера на логото */
+:root {
+  --header-top-offset: 1rem; /* Отстояние на хедъра от горния ръб */
+  --logo-left-offset: 1rem; /* Отстояние на логото от левия ръб */
+  --logo-width: clamp(120px, 14vw, 170px); /* Базова ширина на логото (преди мащаб) */
+  --logo-scale: 4; /* Мащаб на самото изображение: 1 = 100%, 4 = 400% */
+  --header-logo-gap: 1.25rem; /* Разстояние между логото и хедъра */
+}
+
 .site-header,
 main,
 footer {
@@ -52,9 +61,14 @@ footer {
 
 .site-header {
   position: sticky;
-  top: 1rem;
+  top: var(--header-top-offset);
   z-index: 10;
-  margin-top: 1rem;
+  margin-top: var(--header-top-offset);
+  margin-left: calc(var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap)); /* Пази място според реалния видим размер на логото */
+  width: min(
+    1100px,
+    calc(100% - 2rem - (var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap)))
+  ); /* Свива хедъра, за да не влиза под логото */
   padding: 0.85rem 1.1rem;
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
@@ -68,32 +82,26 @@ footer {
 
 .corner-logo {
   position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 999;
-  padding: 0.8rem 1rem;
+  top: var(--header-top-offset);
+  left: var(--logo-left-offset);
+  z-index: 20;
   display: inline-flex;
   align-items: center;
   text-decoration: none;
 }
 
 .logo-mark {
-  width: clamp(140px, 18vw, 200px);
+  width: var(--logo-width);
   height: auto;
   display: inline-flex;
-  overflow: visible;
-}
-
-.corner-logo {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 20;
+  overflow: visible; /* Позволява лого на 400% да се вижда извън контейнера */
 }
 
 .logo-mark img {
-  width: 400%;
-  max-width: none;
+  width: 100%; /* Базова ширина, контролира се от --logo-width */
+  max-width: none; /* Важно при по-голям мащаб (напр. 400%) */
+  transform: scale(var(--logo-scale)); /* Реално уголемява/смалява логото */
+  transform-origin: top left; /* Логото расте надясно/надолу от горе-ляво */
   height: auto;
   object-fit: contain;
   filter:
@@ -392,14 +400,12 @@ footer {
     display: none;
   }
 
-  .corner-logo {
-    top: 0;
-    left: 0;
-    padding: 0.65rem 0.75rem;
-  }
-
-  .logo-mark {
-    width: clamp(120px, 34vw, 160px);
+  :root {
+    --header-top-offset: 0.5rem; /* По-малко отстояние на мобилно */
+    --logo-left-offset: 0.8rem; /* По-малко отстояние вляво на мобилно */
+    --logo-width: clamp(105px, 30vw, 145px); /* Базова ширина на логото на мобилно */
+    --logo-scale: 2.7; /* По-нисък мащаб на мобилно, за да не заема целия екран */
+    --header-logo-gap: 0.8rem; /* Дистанция лого/хедър на мобилно */
   }
 
   .stats,
@@ -408,7 +414,4 @@ footer {
     grid-template-columns: 1fr;
   }
 
-  .site-header {
-    top: 0.5rem;
-  }
 }
