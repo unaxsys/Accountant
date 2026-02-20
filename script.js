@@ -32,44 +32,75 @@ const testimonials = [
 
 let testimonialIndex = 0;
 
-yearEl.textContent = new Date().getFullYear();
+function formatIsoDateToBg(isoDate) {
+  if (!isoDate || typeof isoDate !== 'string') {
+    return '';
+  }
+
+  const [year, month, day] = isoDate.split('-');
+  if (!year || !month || !day) {
+    return isoDate;
+  }
+
+  return `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`;
+}
+
+window.formatIsoDateToBg = formatIsoDateToBg;
+
+if (yearEl) {
+  yearEl.textContent = new Date().getFullYear();
+}
 
 openQuoteButtons.forEach((button) => {
   button.addEventListener('click', () => {
-    quoteDialog.showModal();
+    if (quoteDialog && typeof quoteDialog.showModal === 'function') {
+      quoteDialog.showModal();
+    }
   });
 });
 
-closeQuoteButton.addEventListener('click', () => {
-  quoteDialog.close();
-});
+if (closeQuoteButton && quoteDialog) {
+  closeQuoteButton.addEventListener('click', () => {
+    quoteDialog.close();
+  });
+}
 
-quoteForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+if (quoteForm && formNote) {
+  quoteForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-  formNote.textContent = 'Изпращане...';
+    formNote.textContent = 'Изпращане...';
 
-  try {
-    const response = await fetch('send.php', {
-      method: 'POST',
-      body: new FormData(quoteForm)
-    });
+    const sendEndpoint = window.location.pathname.includes('/statii/') ? '../send.php' : 'send.php';
 
-    const result = await response.json();
-    formNote.textContent = result.message || 'Възникна непредвидена грешка.';
+    try {
+      const response = await fetch(sendEndpoint, {
+        method: 'POST',
+        body: new FormData(quoteForm)
+      });
 
-    if (response.ok && result.ok) {
-      quoteForm.reset();
-      setTimeout(() => {
-        quoteDialog.close();
-      }, 1800);
+      const result = await response.json();
+      formNote.textContent = result.message || 'Възникна непредвидена грешка.';
+
+      if (response.ok && result.ok) {
+        quoteForm.reset();
+        setTimeout(() => {
+          if (quoteDialog) {
+            quoteDialog.close();
+          }
+        }, 1800);
+      }
+    } catch (error) {
+      formNote.textContent = 'Няма връзка със сървъра. Моля, опитайте отново.';
     }
-  } catch (error) {
-    formNote.textContent = 'Няма връзка със сървъра. Моля, опитайте отново.';
-  }
-});
+  });
+}
 
 function openDrawer() {
+  if (!mobileDrawer || !drawerBackdrop || !menuToggle) {
+    return;
+  }
+
   mobileDrawer.classList.add('open');
   drawerBackdrop.hidden = false;
   menuToggle.setAttribute('aria-expanded', 'true');
@@ -77,15 +108,27 @@ function openDrawer() {
 }
 
 function closeDrawer() {
+  if (!mobileDrawer || !drawerBackdrop || !menuToggle) {
+    return;
+  }
+
   mobileDrawer.classList.remove('open');
   drawerBackdrop.hidden = true;
   menuToggle.setAttribute('aria-expanded', 'false');
   mobileDrawer.setAttribute('aria-hidden', 'true');
 }
 
-menuToggle.addEventListener('click', openDrawer);
-drawerClose.addEventListener('click', closeDrawer);
-drawerBackdrop.addEventListener('click', closeDrawer);
+if (menuToggle) {
+  menuToggle.addEventListener('click', openDrawer);
+}
+
+if (drawerClose) {
+  drawerClose.addEventListener('click', closeDrawer);
+}
+
+if (drawerBackdrop) {
+  drawerBackdrop.addEventListener('click', closeDrawer);
+}
 
 drawerLinks.forEach((link) => {
   link.addEventListener('click', closeDrawer);
@@ -93,24 +136,38 @@ drawerLinks.forEach((link) => {
 
 faqItems.forEach((item) => {
   const button = item.querySelector('.faq-question');
+  if (!button) {
+    return;
+  }
+
   button.addEventListener('click', () => {
     item.classList.toggle('active');
   });
 });
 
 function renderTestimonial() {
+  if (!testimonialText || !testimonialAuthor) {
+    return;
+  }
+
   testimonialText.textContent = testimonials[testimonialIndex].text;
   testimonialAuthor.textContent = testimonials[testimonialIndex].author;
 }
 
-testimonialPrev.addEventListener('click', () => {
-  testimonialIndex = (testimonialIndex - 1 + testimonials.length) % testimonials.length;
-  renderTestimonial();
-});
+if (testimonialPrev) {
+  testimonialPrev.addEventListener('click', () => {
+    testimonialIndex = (testimonialIndex - 1 + testimonials.length) % testimonials.length;
+    renderTestimonial();
+  });
+}
 
-testimonialNext.addEventListener('click', () => {
-  testimonialIndex = (testimonialIndex + 1) % testimonials.length;
-  renderTestimonial();
-});
+if (testimonialNext) {
+  testimonialNext.addEventListener('click', () => {
+    testimonialIndex = (testimonialIndex + 1) % testimonials.length;
+    renderTestimonial();
+  });
+}
 
-renderTestimonial();
+if (testimonialText && testimonialAuthor) {
+  renderTestimonial();
+}
