@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" role="img" aria-label="Магос ЕООД лого">
+  <defs>
+    <linearGradient id="logoGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8ca3ff" />
+      <stop offset="100%" stop-color="#42d3ff" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="52" height="52" rx="14" fill="#07122e" stroke="url(#logoGradient)" stroke-width="2" />
+  <rect x="13" y="15" width="30" height="28" rx="5" fill="#0f1f49" stroke="#2c4ea8" stroke-width="1.2" />
+  <path d="M20 24h16M20 30h16M20 36h9" stroke="#7ed8ff" stroke-width="2" stroke-linecap="round" />
+  <path d="M35 39l5-7 4 3" stroke="url(#logoGradient)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <circle cx="42" cy="13" r="3" fill="#75ffe9" />
+</svg>
