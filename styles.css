@@ -62,11 +62,11 @@ footer {
   background: rgba(8, 12, 29, 0.75);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
 }
 
-.logo {
+.corner-logo {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
@@ -77,10 +77,17 @@ footer {
 }
 
 .logo-mark {
-  width: clamp(220px, 28vw, 360px);
-  height: 72px;
+  width: clamp(220px, 24vw, 320px);
+  height: 64px;
   display: inline-flex;
   overflow: visible;
+}
+
+.corner-logo {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20;
 }
 
 .logo-mark svg,
@@ -88,8 +95,7 @@ footer {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transform: scale(1.75);
-  transform-origin: left center;
+  transform: none;
   filter: drop-shadow(0 8px 16px rgba(66, 211, 255, 0.28));
 }
 
@@ -384,14 +390,14 @@ footer {
     display: none;
   }
 
-  .logo-mark {
-    width: 220px;
-    height: 56px;
+  .corner-logo {
+    top: 0.65rem;
+    left: 0.75rem;
   }
 
-  .logo-mark svg,
-  .logo-mark img {
-    transform: scale(1.35);
+  .logo-mark {
+    width: 180px;
+    height: 46px;
   }
 
   .stats,
