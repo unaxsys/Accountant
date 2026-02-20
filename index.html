@@ -234,7 +234,7 @@
     </main>
 
     <dialog id="quote-dialog" class="quote-dialog">
-      <form class="quote-form" id="quote-form" method="dialog">
+      <form class="quote-form" id="quote-form">
         <div class="quote-head">
           <h3>Запитване за оферта</h3>
           <button type="button" class="close-btn" id="close-quote" aria-label="Затвори">✕</button>
@@ -263,6 +263,7 @@
         <label>Кратко описание
           <textarea name="message" rows="4" placeholder="Опишете нуждите на вашия бизнес..."></textarea>
         </label>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" />
 
         <button class="btn" type="submit">Изпрати запитване</button>
         <p class="form-note" id="form-note"></p>
