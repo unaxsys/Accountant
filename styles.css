@@ -47,7 +47,8 @@ body {
 :root {
   --header-top-offset: 1rem; /* Отстояние на хедъра от горния ръб */
   --logo-left-offset: 1rem; /* Отстояние на логото от левия ръб */
-  --logo-width: clamp(120px, 14vw, 170px); /* Ширина на логото на desktop */
+  --logo-width: clamp(120px, 14vw, 170px); /* Базова ширина на логото (преди мащаб) */
+  --logo-scale: 4; /* Мащаб на самото изображение: 1 = 100%, 4 = 400% */
   --header-logo-gap: 1.25rem; /* Разстояние между логото и хедъра */
 }
 
@@ -63,10 +64,10 @@ footer {
   top: var(--header-top-offset);
   z-index: 10;
   margin-top: var(--header-top-offset);
-  margin-left: calc(var(--logo-left-offset) + var(--logo-width) + var(--header-logo-gap)); /* Пази място за логото вляво */
+  margin-left: calc(var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap)); /* Пази място според реалния видим размер на логото */
   width: min(
     1100px,
-    calc(100% - 2rem - (var(--logo-left-offset) + var(--logo-width) + var(--header-logo-gap)))
+    calc(100% - 2rem - (var(--logo-left-offset) + (var(--logo-width) * var(--logo-scale)) + var(--header-logo-gap)))
   ); /* Свива хедъра, за да не влиза под логото */
   padding: 0.85rem 1.1rem;
   backdrop-filter: blur(14px);
@@ -93,10 +94,14 @@ footer {
   width: var(--logo-width);
   height: auto;
   display: inline-flex;
+  overflow: visible; /* Позволява лого на 400% да се вижда извън контейнера */
 }
 
 .logo-mark img {
-  width: 400%; /* Ако искаш по-голямо/малко лого, пипай --logo-width */
+  width: 100%; /* Базова ширина, контролира се от --logo-width */
+  max-width: none; /* Важно при по-голям мащаб (напр. 400%) */
+  transform: scale(var(--logo-scale)); /* Реално уголемява/смалява логото */
+  transform-origin: top left; /* Логото расте надясно/надолу от горе-ляво */
   height: auto;
   object-fit: contain;
   filter:
@@ -398,7 +403,8 @@ footer {
   :root {
     --header-top-offset: 0.5rem; /* По-малко отстояние на мобилно */
     --logo-left-offset: 0.8rem; /* По-малко отстояние вляво на мобилно */
-    --logo-width: clamp(105px, 30vw, 145px); /* Ширина на логото на мобилно */
+    --logo-width: clamp(105px, 30vw, 145px); /* Базова ширина на логото на мобилно */
+    --logo-scale: 2.7; /* По-нисък мащаб на мобилно, за да не заема целия екран */
     --header-logo-gap: 0.8rem; /* Дистанция лого/хедър на мобилно */
   }
 
