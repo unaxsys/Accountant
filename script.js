@@ -46,7 +46,23 @@ closeQuoteButton.addEventListener('click', () => {
 
 quoteForm.addEventListener('submit', (event) => {
   event.preventDefault();
-  formNote.textContent = 'Благодарим! Получихме запитването и ще се свържем с вас до 24 часа.';
+
+  const formData = new FormData(quoteForm);
+  const subject = `Запитване за оферта от ${formData.get('name')}`;
+  const body = [
+    `Име и фамилия: ${formData.get('name')}`,
+    `Фирма: ${formData.get('company')}`,
+    `Имейл: ${formData.get('email')}`,
+    `Телефон: ${formData.get('phone')}`,
+    `Услуга: ${formData.get('service')}`,
+    '',
+    'Описание:',
+    `${formData.get('message') || 'Няма добавено описание.'}`
+  ].join('\n');
+
+  window.location.href = `mailto:office@magos.bg?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  formNote.textContent = 'Отваряме вашия имейл клиент, за да изпратите запитването към office@magos.bg.';
   quoteForm.reset();
 
   setTimeout(() => {
