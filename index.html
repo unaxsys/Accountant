@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="bg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Магос ЕООД | Модерно счетоводство</title>
+    <meta
+      name="description"
+      content="Магос ЕООД предлага модерно счетоводно обслужване, ТРЗ и данъчни консултации за растящ бизнес."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-glow bg-glow-left"></div>
+    <div class="bg-glow bg-glow-right"></div>
+
+    <header class="site-header">
+      <a href="#" class="logo" aria-label="Магос ЕООД начало">
+        <span class="logo-mark" aria-hidden="true">
+          <svg viewBox="0 0 56 56" role="img">
+            <defs>
+              <linearGradient id="logoGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#8ca3ff" />
+                <stop offset="100%" stop-color="#42d3ff" />
+              </linearGradient>
+            </defs>
+            <rect x="2" y="2" width="52" height="52" rx="14" fill="#07122e" stroke="url(#logoGradient)" stroke-width="2" />
+            <rect x="13" y="15" width="30" height="28" rx="5" fill="#0f1f49" stroke="#2c4ea8" stroke-width="1.2" />
+            <path d="M20 24h16M20 30h16M20 36h9" stroke="#7ed8ff" stroke-width="2" stroke-linecap="round" />
+            <path d="M35 39l5-7 4 3" stroke="url(#logoGradient)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <circle cx="42" cy="13" r="3" fill="#75ffe9" />
+          </svg>
+        </span>
+        <span class="logo-text">Магос <span>ЕООД</span></span>
+      </a>
+      <nav>
+        <a href="#services">Услуги</a>
+        <a href="#about">За нас</a>
+        <a href="#contact">Контакт</a>
+      </nav>
+      <button class="btn btn-small quote-open" type="button">Запитване</button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="tag">Счетоводство от ново поколение</p>
+        <h1>Финансова яснота за смелия бизнес.</h1>
+        <p class="subtitle">
+          Ние от <strong>Магос ЕООД</strong> съчетаваме експертизата на професионално
+          счетоводство с дигитални процеси, за да пестим време, риск и средства.
+        </p>
+        <div class="hero-actions">
+          <button class="btn quote-open" type="button">Безплатна консултация</button>
+          <a href="#services" class="btn btn-ghost">Виж услуги</a>
+        </div>
+
+        <div class="stats">
+          <article>
+            <h3>150+</h3>
+            <p>доволни клиента</p>
+          </article>
+          <article>
+            <h3>25+ г.</h3>
+            <p>професионален опит</p>
+          </article>
+          <article>
+            <h3>24/7</h3>
+            <p>достъп до отчетност</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="cards" id="services">
+        <article class="card">
+          <h3>Пълно счетоводно обслужване</h3>
+          <p>
+            Текущо осчетоводяване, ДДС, годишно приключване и отчети с прецизност и
+            прозрачност.
+          </p>
+        </article>
+        <article class="card">
+          <h3>ТРЗ и личен състав</h3>
+          <p>
+            Заплати, осигуровки, договори и цялостна административна подкрепа за вашия екип.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Данъчни и финансови консултации</h3>
+          <p>
+            Практични решения за оптимизация и стратегическо планиране на растежа на бизнеса.
+          </p>
+        </article>
+      </section>
+
+      <section class="about" id="about">
+        <div>
+          <p class="tag">За Магос ЕООД</p>
+          <h2>Повече от 25 години опит в счетоводството и данъчната сигурност.</h2>
+          <p>
+            Работим с малки и средни компании в различни индустрии и изграждаме
+            дългосрочни партньорства, базирани на точност, срок и доверие.
+          </p>
+        </div>
+        <ul>
+          <li>✔ Дигитален обмен на документи</li>
+          <li>✔ Персонален експерт за всеки клиент</li>
+          <li>✔ Ясни месечни справки и анализи</li>
+        </ul>
+      </section>
+
+      <section class="contact" id="contact">
+        <h2>Готови ли сте за счетоводство без излишен стрес?</h2>
+        <p>Изпратете запитване и ще получите индивидуална оферта до 24 часа.</p>
+        <div class="hero-actions">
+          <button class="btn quote-open" type="button">Поискай оферта</button>
+          <a class="btn btn-ghost" href="mailto:office@magos.bg">office@magos.bg</a>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="quote-dialog" class="quote-dialog">
+      <form class="quote-form" id="quote-form" method="dialog">
+        <div class="quote-head">
+          <h3>Запитване за оферта</h3>
+          <button type="button" class="close-btn" id="close-quote" aria-label="Затвори">✕</button>
+        </div>
+
+        <label>Име и фамилия
+          <input type="text" name="name" required />
+        </label>
+        <label>Фирма
+          <input type="text" name="company" required />
+        </label>
+        <label>Имейл
+          <input type="email" name="email" required />
+        </label>
+        <label>Телефон
+          <input type="tel" name="phone" required />
+        </label>
+        <label>Каква услуга ви интересува?
+          <select name="service" required>
+            <option value="">Изберете услуга</option>
+            <option>Пълно счетоводно обслужване</option>
+            <option>ТРЗ и личен състав</option>
+            <option>Данъчни консултации</option>
+          </select>
+        </label>
+        <label>Кратко описание
+          <textarea name="message" rows="4" placeholder="Опишете нуждите на вашия бизнес..."></textarea>
+        </label>
+
+        <button class="btn" type="submit">Изпрати запитване</button>
+        <p class="form-note" id="form-note"></p>
+      </form>
+    </dialog>
+
+    <footer>
+      <p>© <span id="year"></span> Магос ЕООД · Всички права запазени.</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
