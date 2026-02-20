@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 120" role="img" aria-label="Магос ЕООД">
+  <defs>
+    <linearGradient id="brandGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a8bbff" />
+      <stop offset="100%" stop-color="#45d7ff" />
+    </linearGradient>
+    <filter id="logoGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#42d3ff" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#logoGlow)">
+    <path d="M20 18h108v84l-54 16-54-16z" fill="rgba(7,18,46,0.65)" stroke="url(#brandGradient)" stroke-width="4"/>
+    <path d="M43 77l20-30 20 22 23-30 17 16" fill="none" stroke="url(#brandGradient)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M52 88h66" stroke="#7adfff" stroke-width="7" stroke-linecap="round"/>
+  </g>
+
+  <line x1="154" y1="26" x2="154" y2="102" stroke="url(#brandGradient)" stroke-width="3" opacity="0.9"/>
+
+  <g fill="url(#brandGradient)" font-family="Manrope, Arial, sans-serif" font-weight="800" letter-spacing="0.5">
+    <text x="176" y="69" font-size="56">МАГОС ЕООД</text>
+    <text x="178" y="98" font-size="22" font-weight="700" fill="#d8e3ff">СЧЕТОВОДНИ УСЛУГИ</text>
+  </g>
+</svg>

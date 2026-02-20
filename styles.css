@@ -77,23 +77,17 @@ footer {
 }
 
 .logo-mark {
-  width: 2.4rem;
-  height: 2.4rem;
+  width: clamp(150px, 21vw, 250px);
+  height: 52px;
   display: inline-flex;
 }
 
-.logo-mark svg {
+.logo-mark svg,
+.logo-mark img {
   width: 100%;
   height: 100%;
+  object-fit: contain;
   filter: drop-shadow(0 8px 16px rgba(66, 211, 255, 0.28));
-}
-
-.logo-text {
-  white-space: nowrap;
-}
-
-.logo span {
-  color: var(--brand-2);
 }
 
 nav {
@@ -267,6 +261,54 @@ h1 {
   color: var(--muted);
 }
 
+
+.cards .card ul {
+  margin: 0.7rem 0 0;
+  padding-left: 1.15rem;
+  color: var(--muted);
+}
+
+.cards .card li {
+  margin-bottom: 0.4rem;
+}
+
+.section-box,
+.process,
+.faq {
+  margin-top: 2rem;
+}
+
+.section-box {
+  padding: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  backdrop-filter: blur(6px);
+}
+
+.section-list {
+  margin: 1rem 0 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+  display: grid;
+  gap: 0.45rem;
+}
+
+.process h2,
+.faq h2 {
+  margin-bottom: 1rem;
+}
+
+.contact a {
+  color: var(--brand-2);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.contact a:hover {
+  text-decoration: underline;
+}
+
 .quote-dialog {
   width: min(560px, calc(100% - 2rem));
   border: 1px solid var(--border);
@@ -337,6 +379,11 @@ footer {
 @media (max-width: 850px) {
   nav {
     display: none;
+  }
+
+  .logo-mark {
+    width: 170px;
+    height: 42px;
   }
 
   .stats,
