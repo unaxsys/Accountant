@@ -62,32 +62,35 @@ footer {
   background: rgba(8, 12, 29, 0.75);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
 }
 
-.logo {
+.corner-logo {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 999;
+  padding: 0.8rem 1rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
   text-decoration: none;
-  color: var(--text);
-  font-weight: 800;
-  letter-spacing: 0.2px;
 }
 
 .logo-mark {
-  width: clamp(150px, 21vw, 250px);
-  height: 52px;
+  width: clamp(140px, 18vw, 200px);
+  height: auto;
   display: inline-flex;
 }
 
-.logo-mark svg,
 .logo-mark img {
-  width: 100%;
-  height: 100%;
+  width: 400%;
+  max-width: none;
+  height: auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 16px rgba(66, 211, 255, 0.28));
+  filter:
+    drop-shadow(0 0 12px rgba(66, 211, 255, 0.6))
+    drop-shadow(0 0 24px rgba(110, 141, 255, 0.4));
 }
 
 nav {
@@ -381,9 +384,14 @@ footer {
     display: none;
   }
 
+  .corner-logo {
+    top: 0;
+    left: 0;
+    padding: 0.65rem 0.75rem;
+  }
+
   .logo-mark {
-    width: 170px;
-    height: 42px;
+    width: clamp(120px, 34vw, 160px);
   }
 
   .stats,
