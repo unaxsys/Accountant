@@ -81,6 +81,14 @@ footer {
   width: clamp(140px, 18vw, 200px);
   height: auto;
   display: inline-flex;
+  overflow: visible;
+}
+
+.corner-logo {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20;
 }
 
 .logo-mark img {
