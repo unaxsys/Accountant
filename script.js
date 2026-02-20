@@ -171,6 +171,7 @@ if (testimonialNext) {
 if (testimonialText && testimonialAuthor) {
   renderTestimonial();
 }
+
 // ===== Expert Tips: load from /articles.json and render into #tips-list =====
 (async function initExpertTips() {
   const listEl = document.getElementById('tips-list');
@@ -195,25 +196,20 @@ if (testimonialText && testimonialAuthor) {
     if (!items.length) return [];
     if (used.size >= items.length) used.clear();
 
-    const poolIdx = [];
-    for (let i = 0; i < items.length; i++) if (!used.has(i)) poolIdx.push(i);
+    const pool = [];
+    for (let i = 0; i < items.length; i++) if (!used.has(i)) pool.push(i);
 
     const chosen = [];
     while (chosen.length < Math.min(SHOW_COUNT, items.length)) {
-      const source = poolIdx.length ? poolIdx : [...Array(items.length).keys()];
-      const pickPos = Math.floor(Math.random() * source.length);
-      const idx = source[pickPos];
-
+      const source = pool.length ? pool : [...Array(items.length).keys()];
+      const idx = source[Math.floor(Math.random() * source.length)];
       if (!used.has(idx)) {
         used.add(idx);
         chosen.push(items[idx]);
       }
-
-      // махаме избраното от poolIdx
-      const poolRemoveAt = poolIdx.indexOf(idx);
-      if (poolRemoveAt >= 0) poolIdx.splice(poolRemoveAt, 1);
-
-      if (!poolIdx.length && chosen.length < SHOW_COUNT && items.length > SHOW_COUNT) break;
+      const pos = pool.indexOf(idx);
+      if (pos >= 0) pool.splice(pos, 1);
+      if (!pool.length) break;
     }
     return chosen;
   };
@@ -241,7 +237,7 @@ if (testimonialText && testimonialAuthor) {
     const res = await fetch('/articles.json', { cache: 'no-store' });
     const data = await res.json();
 
-    // ✅ приема и двата формата: {items:[...]} ИЛИ [...]
+    // ✅ Works with BOTH formats: {items:[...]} OR [...]
     items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
 
     if (!items.length) {
