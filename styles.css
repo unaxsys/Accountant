@@ -96,7 +96,7 @@ footer {
 }
 
 .logo-mark img {
-  width: 100%; /* Ако искаш по-голямо/малко лого, пипай --logo-width */
+  width: 200%; /* Ако искаш по-голямо/малко лого, пипай --logo-width */
   height: auto;
   object-fit: contain;
   filter:
