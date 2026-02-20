@@ -62,11 +62,11 @@ footer {
   background: rgba(8, 12, 29, 0.75);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
 }
 
-.logo {
+.corner-logo {
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
@@ -77,9 +77,16 @@ footer {
 }
 
 .logo-mark {
-  width: clamp(150px, 21vw, 250px);
-  height: 52px;
+  width: clamp(220px, 24vw, 320px);
+  height: 64px;
   display: inline-flex;
+}
+
+.corner-logo {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 20;
 }
 
 .logo-mark svg,
@@ -87,6 +94,7 @@ footer {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  transform: none;
   filter: drop-shadow(0 8px 16px rgba(66, 211, 255, 0.28));
 }
 
@@ -381,9 +389,14 @@ footer {
     display: none;
   }
 
+  .corner-logo {
+    top: 0.65rem;
+    left: 0.75rem;
+  }
+
   .logo-mark {
-    width: 170px;
-    height: 42px;
+    width: 180px;
+    height: 46px;
   }
 
   .stats,
