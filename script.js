@@ -32,44 +32,75 @@ const testimonials = [
 
 let testimonialIndex = 0;
 
-yearEl.textContent = new Date().getFullYear();
+function formatIsoDateToBg(isoDate) {
+  if (!isoDate || typeof isoDate !== 'string') {
+    return '';
+  }
+
+  const [year, month, day] = isoDate.split('-');
+  if (!year || !month || !day) {
+    return isoDate;
+  }
+
+  return `${day.padStart(2, '0')}.${month.padStart(2, '0')}.${year}`;
+}
+
+window.formatIsoDateToBg = formatIsoDateToBg;
+
+if (yearEl) {
+  yearEl.textContent = new Date().getFullYear();
+}
 
 openQuoteButtons.forEach((button) => {
   button.addEventListener('click', () => {
-    quoteDialog.showModal();
+    if (quoteDialog && typeof quoteDialog.showModal === 'function') {
+      quoteDialog.showModal();
+    }
   });
 });
 
-closeQuoteButton.addEventListener('click', () => {
-  quoteDialog.close();
-});
+if (closeQuoteButton && quoteDialog) {
+  closeQuoteButton.addEventListener('click', () => {
+    quoteDialog.close();
+  });
+}
 
-quoteForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+if (quoteForm && formNote) {
+  quoteForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-  formNote.textContent = 'Изпращане...';
+    formNote.textContent = 'Изпращане...';
 
-  try {
-    const response = await fetch('send.php', {
-      method: 'POST',
-      body: new FormData(quoteForm)
-    });
+    const sendEndpoint = window.location.pathname.includes('/statii/') ? '../send.php' : 'send.php';
 
-    const result = await response.json();
-    formNote.textContent = result.message || 'Възникна непредвидена грешка.';
+    try {
+      const response = await fetch(sendEndpoint, {
+        method: 'POST',
+        body: new FormData(quoteForm)
+      });
 
-    if (response.ok && result.ok) {
-      quoteForm.reset();
-      setTimeout(() => {
-        quoteDialog.close();
-      }, 1800);
+      const result = await response.json();
+      formNote.textContent = result.message || 'Възникна непредвидена грешка.';
+
+      if (response.ok && result.ok) {
+        quoteForm.reset();
+        setTimeout(() => {
+          if (quoteDialog) {
+            quoteDialog.close();
+          }
+        }, 1800);
+      }
+    } catch (error) {
+      formNote.textContent = 'Няма връзка със сървъра. Моля, опитайте отново.';
     }
-  } catch (error) {
-    formNote.textContent = 'Няма връзка със сървъра. Моля, опитайте отново.';
-  }
-});
+  });
+}
 
 function openDrawer() {
+  if (!mobileDrawer || !drawerBackdrop || !menuToggle) {
+    return;
+  }
+
   mobileDrawer.classList.add('open');
   drawerBackdrop.hidden = false;
   menuToggle.setAttribute('aria-expanded', 'true');
@@ -77,15 +108,27 @@ function openDrawer() {
 }
 
 function closeDrawer() {
+  if (!mobileDrawer || !drawerBackdrop || !menuToggle) {
+    return;
+  }
+
   mobileDrawer.classList.remove('open');
   drawerBackdrop.hidden = true;
   menuToggle.setAttribute('aria-expanded', 'false');
   mobileDrawer.setAttribute('aria-hidden', 'true');
 }
 
-menuToggle.addEventListener('click', openDrawer);
-drawerClose.addEventListener('click', closeDrawer);
-drawerBackdrop.addEventListener('click', closeDrawer);
+if (menuToggle) {
+  menuToggle.addEventListener('click', openDrawer);
+}
+
+if (drawerClose) {
+  drawerClose.addEventListener('click', closeDrawer);
+}
+
+if (drawerBackdrop) {
+  drawerBackdrop.addEventListener('click', closeDrawer);
+}
 
 drawerLinks.forEach((link) => {
   link.addEventListener('click', closeDrawer);
@@ -93,24 +136,119 @@ drawerLinks.forEach((link) => {
 
 faqItems.forEach((item) => {
   const button = item.querySelector('.faq-question');
+  if (!button) {
+    return;
+  }
+
   button.addEventListener('click', () => {
     item.classList.toggle('active');
   });
 });
 
 function renderTestimonial() {
+  if (!testimonialText || !testimonialAuthor) {
+    return;
+  }
+
   testimonialText.textContent = testimonials[testimonialIndex].text;
   testimonialAuthor.textContent = testimonials[testimonialIndex].author;
 }
 
-testimonialPrev.addEventListener('click', () => {
-  testimonialIndex = (testimonialIndex - 1 + testimonials.length) % testimonials.length;
-  renderTestimonial();
-});
+if (testimonialPrev) {
+  testimonialPrev.addEventListener('click', () => {
+    testimonialIndex = (testimonialIndex - 1 + testimonials.length) % testimonials.length;
+    renderTestimonial();
+  });
+}
 
-testimonialNext.addEventListener('click', () => {
-  testimonialIndex = (testimonialIndex + 1) % testimonials.length;
-  renderTestimonial();
-});
+if (testimonialNext) {
+  testimonialNext.addEventListener('click', () => {
+    testimonialIndex = (testimonialIndex + 1) % testimonials.length;
+    renderTestimonial();
+  });
+}
 
-renderTestimonial();
+if (testimonialText && testimonialAuthor) {
+  renderTestimonial();
+}
+
+// ===== Expert Tips: load from /articles.json and render into #tips-list =====
+(async function initExpertTips() {
+  const listEl = document.getElementById('tips-list');
+  const refreshBtn = document.getElementById('tips-refresh');
+  if (!listEl) return;
+
+  const ROTATE_EVERY_MS = 30000;
+  const SHOW_COUNT = 3;
+
+  let items = [];
+  let used = new Set();
+
+  const esc = (s) =>
+    String(s ?? '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+
+  const pickNext = () => {
+    if (!items.length) return [];
+    if (used.size >= items.length) used.clear();
+
+    const pool = [];
+    for (let i = 0; i < items.length; i++) if (!used.has(i)) pool.push(i);
+
+    const chosen = [];
+    while (chosen.length < Math.min(SHOW_COUNT, items.length)) {
+      const source = pool.length ? pool : [...Array(items.length).keys()];
+      const idx = source[Math.floor(Math.random() * source.length)];
+      if (!used.has(idx)) {
+        used.add(idx);
+        chosen.push(items[idx]);
+      }
+      const pos = pool.indexOf(idx);
+      if (pos >= 0) pool.splice(pos, 1);
+      if (!pool.length) break;
+    }
+    return chosen;
+  };
+
+  const render = (arr) => {
+    listEl.innerHTML = arr
+      .map(
+        (it) => `
+        <article class="tip-item">
+          <h4 class="tip-title">${esc(it.title)}</h4>
+          <p class="tip-excerpt">${esc(it.excerpt)}</p>
+          <div class="tip-meta">
+            <span>${esc(window.formatIsoDateToBg ? window.formatIsoDateToBg(it.date) : (it.date || ''))}</span>
+            <a class="tip-link" href="${esc(it.url || '#')}">Прочети</a>
+          </div>
+        </article>
+      `
+      )
+      .join('');
+  };
+
+  const rotate = () => render(pickNext());
+
+  try {
+    const res = await fetch('/articles.json', { cache: 'no-store' });
+    const data = await res.json();
+
+    // ✅ Works with BOTH formats: {items:[...]} OR [...]
+    items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
+
+    if (!items.length) {
+      listEl.innerHTML = `<div class="tip-item"><p class="tip-excerpt">Няма налични статии в момента.</p></div>`;
+      return;
+    }
+
+    rotate();
+    refreshBtn?.addEventListener('click', rotate);
+    setInterval(rotate, ROTATE_EVERY_MS);
+  } catch (e) {
+    listEl.innerHTML = `<div class="tip-item"><p class="tip-excerpt">Не успях да заредя статиите. Провери дали <b>articles.json</b> е качен.</p></div>`;
+  }
+})();
