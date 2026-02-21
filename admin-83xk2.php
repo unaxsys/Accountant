@@ -22,6 +22,8 @@ function require_admin_or_404() {
   }
 }
 
+function h($s): string { return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); }
+
 $pdo = db();
 
 // Logout
@@ -47,30 +49,7 @@ if (!is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ??
   }
 }
 
-// Admin actions: approve/delete
-if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), ['approve','delete'], true)) {
-  if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
-    http_response_code(400);
-    echo "Bad Request";
-    exit;
-  }
-
-  $id = (int)($_POST['id'] ?? 0);
-  if ($id > 0) {
-    if ($_POST['action'] === 'approve') {
-      $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at=:t WHERE id=:id");
-      $stmt->execute([':t' => gmdate('c'), ':id' => $id]);
-    } else if ($_POST['action'] === 'delete') {
-      $stmt = $pdo->prepare("DELETE FROM reviews WHERE id=:id");
-      $stmt->execute([':id' => $id]);
-    }
-  }
-
-  header('Location: admin-83xk2.php');
-  exit;
-}
-
-// If not logged -> show login (no mention in menus, direct URL only)
+// If not logged -> show login (direct URL only)
 if (!is_admin()) {
   ?>
   <!doctype html>
@@ -101,7 +80,7 @@ if (!is_admin()) {
         <label>Парола *</label>
         <input name="password" type="password" required>
         <button type="submit">Вход</button>
-        <?php if ($login_error): ?><div class="err"><?= htmlspecialchars($login_error) ?></div><?php endif; ?>
+        <?php if ($login_error): ?><div class="err"><?= h($login_error) ?></div><?php endif; ?>
         <div class="note">Тази страница не е публично линкната.</div>
       </form>
     </div>
@@ -111,12 +90,92 @@ if (!is_admin()) {
   exit;
 }
 
-// Admin view
+// Admin actions
 require_admin_or_404();
 
-$pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY datetime(created_at) DESC")->fetchAll();
-$approved = $pdo->query("SELECT * FROM reviews WHERE status='approved' ORDER BY datetime(approved_at) DESC, datetime(created_at) DESC LIMIT 50")->fetchAll();
+function require_csrf_or_400() {
+  if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
+    http_response_code(400);
+    echo "Bad Request";
+    exit;
+  }
+}
 
+$flash = '';
+
+// Approve / Delete / Update
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $action = (string)($_POST['action'] ?? '');
+
+  if (in_array($action, ['approve', 'delete', 'update'], true)) {
+    require_csrf_or_400();
+
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id > 0) {
+      if ($action === 'approve') {
+        $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at=:t WHERE id=:id");
+        $stmt->execute([':t' => gmdate('c'), ':id' => $id]);
+        $flash = 'Отзивът е одобрен.';
+      }
+
+      if ($action === 'delete') {
+        $stmt = $pdo->prepare("DELETE FROM reviews WHERE id=:id");
+        $stmt->execute([':id' => $id]);
+        $flash = 'Отзивът е изтрит.';
+      }
+
+      if ($action === 'update') {
+        // Validate & sanitize
+        $name = trim((string)($_POST['name'] ?? ''));
+        $company = trim((string)($_POST['company'] ?? ''));
+        $email = trim((string)($_POST['email'] ?? ''));
+        $rating = (int)($_POST['rating'] ?? 5);
+        $message = trim((string)($_POST['message'] ?? ''));
+
+        if ($name === '' || $email === '' || $message === '') {
+          $flash = 'Моля попълни: Име, Имейл и Отзив.';
+        } else {
+          if ($rating < 1) $rating = 1;
+          if ($rating > 5) $rating = 5;
+
+          // Optional: keep basic length limits
+          $name = mb_substr($name, 0, 120);
+          $company = mb_substr($company, 0, 120);
+          $email = mb_substr($email, 0, 190);
+          $message = mb_substr($message, 0, 2000);
+
+          $stmt = $pdo->prepare("
+            UPDATE reviews
+            SET name=:name, company=:company, email=:email, rating=:rating, message=:message
+            WHERE id=:id
+          ");
+          $stmt->execute([
+            ':name' => $name,
+            ':company' => $company,
+            ':email' => $email,
+            ':rating' => $rating,
+            ':message' => $message,
+            ':id' => $id,
+          ]);
+
+          $flash = 'Промените са запазени.';
+        }
+      }
+    }
+
+    // Redirect to avoid resubmission, keep anchor if provided
+    $anchor = (string)($_POST['anchor'] ?? '');
+    $to = 'admin-83xk2.php' . ($anchor ? '#' . rawurlencode($anchor) : '');
+    header('Location: ' . $to);
+    exit;
+  }
+}
+
+// Data for view
+$pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY datetime(created_at) DESC")->fetchAll();
+$approved = $pdo->query("SELECT * FROM reviews WHERE status='approved' ORDER BY datetime(approved_at) DESC, datetime(created_at) DESC LIMIT 200")->fetchAll();
+
+$editId = (int)($_GET['edit'] ?? 0);
 ?>
 <!doctype html>
 <html lang="bg">
@@ -127,57 +186,77 @@ $approved = $pdo->query("SELECT * FROM reviews WHERE status='approved' ORDER BY 
   <meta name="robots" content="noindex,nofollow">
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#f6f8fb;margin:0;color:#1b2b3a}
-    header{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:#fff;border-bottom:1px solid #e6eaf2;position:sticky;top:0}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;background:#fff;border-bottom:1px solid #e6eaf2;position:sticky;top:0;z-index:10}
     .wrap{max-width:1100px;margin:18px auto;padding:0 14px}
     h2{margin:18px 0 10px;font-size:18px}
     .grid{display:grid;grid-template-columns:1fr;gap:10px}
     .card{background:#fff;border:1px solid #e6eaf2;border-radius:14px;padding:14px;box-shadow:0 10px 24px rgba(0,0,0,.05)}
-    .meta{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#667}
+    .meta{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:#667;align-items:center}
     .msg{margin-top:10px;white-space:pre-wrap}
-    .actions{margin-top:12px;display:flex;gap:10px}
-    button{padding:9px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:700}
+    .actions{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+    button{padding:9px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:800}
     .ok{background:#20a55f;color:#fff}
     .del{background:#e24343;color:#fff}
-    a{color:#2f6fed;text-decoration:none;font-weight:700}
-    .badge{display:inline-flex;align-items:center;gap:6px;background:#eef4ff;color:#2f6fed;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}
+    .ed{background:#2f6fed;color:#fff}
+    a{color:#2f6fed;text-decoration:none;font-weight:800}
+    .badge{display:inline-flex;align-items:center;gap:8px;background:#eef4ff;color:#2f6fed;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800}
     .stars{color:#f5b301;font-weight:900}
+    .flash{max-width:1100px;margin:14px auto 0;padding:0 14px}
+    .flash > div{background:#fff;border:1px solid #e6eaf2;border-radius:14px;padding:12px 14px;box-shadow:0 10px 24px rgba(0,0,0,.05)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    label{display:block;font-size:12px;color:#334;margin-top:10px}
+    input, textarea, select{width:100%;padding:10px 12px;border:1px solid #d9e1ef;border-radius:10px;margin-top:6px;font:inherit}
+    textarea{min-height:110px;resize:vertical}
+    .muted{color:#667;font-size:12px}
+    .toplinks{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   </style>
 </head>
 <body>
 <header>
   <div class="badge">Admin: Отзиви</div>
-  <div><a href="?logout=1">Изход</a></div>
+  <div class="toplinks">
+    <a href="#pending">Чакащи (<?= count($pending) ?>)</a>
+    <a href="#approved">Одобрени (<?= count($approved) ?>)</a>
+    <a href="?logout=1">Изход</a>
+  </div>
 </header>
 
+<?php if (!empty($_GET['msg'])): ?>
+  <div class="flash"><div><?= h((string)$_GET['msg']) ?></div></div>
+<?php endif; ?>
+
 <div class="wrap">
-  <h2>Чакащи одобрение (<?= count($pending) ?>)</h2>
+  <h2 id="pending">Чакащи одобрение (<?= count($pending) ?>)</h2>
   <div class="grid">
     <?php if (!count($pending)): ?>
       <div class="card">Няма чакащи отзиви.</div>
     <?php endif; ?>
 
     <?php foreach ($pending as $r): ?>
-      <div class="card">
+      <div class="card" id="p<?= (int)$r['id'] ?>">
         <div class="meta">
-          <div><strong><?= htmlspecialchars($r['name']) ?></strong><?= $r['company'] ? ' — ' . htmlspecialchars($r['company']) : '' ?></div>
+          <div><strong><?= h($r['name']) ?></strong><?= $r['company'] ? ' — ' . h($r['company']) : '' ?></div>
           <div class="stars"><?= str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5-(int)$r['rating']) ?></div>
-          <div><?= htmlspecialchars($r['email'] ?? '') ?></div>
-          <div><?= htmlspecialchars($r['created_at']) ?></div>
+          <div><?= h($r['email'] ?? '') ?></div>
+          <div><?= h($r['created_at']) ?></div>
         </div>
-        <div class="msg"><?= htmlspecialchars($r['message']) ?></div>
+        <div class="msg"><?= h($r['message']) ?></div>
 
         <div class="actions">
           <form method="post">
-            <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+            <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="approve">
             <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+            <input type="hidden" name="anchor" value="pending">
             <button class="ok" type="submit">Одобри</button>
           </form>
 
           <form method="post" onsubmit="return confirm('Да изтрия ли този отзив?');">
-            <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token()) ?>">
+            <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+            <input type="hidden" name="anchor" value="pending">
             <button class="del" type="submit">Изтрий</button>
           </form>
         </div>
@@ -185,19 +264,94 @@ $approved = $pdo->query("SELECT * FROM reviews WHERE status='approved' ORDER BY 
     <?php endforeach; ?>
   </div>
 
-  <h2>Последно одобрени</h2>
+  <h2 id="approved">Одобрени (последни <?= count($approved) ?>)</h2>
   <div class="grid">
     <?php if (!count($approved)): ?>
       <div class="card">Няма одобрени отзиви още.</div>
     <?php endif; ?>
+
     <?php foreach ($approved as $r): ?>
-      <div class="card">
+      <?php $isEditing = ($editId > 0 && $editId === (int)$r['id']); ?>
+      <div class="card" id="a<?= (int)$r['id'] ?>">
         <div class="meta">
-          <div><strong><?= htmlspecialchars($r['name']) ?></strong><?= $r['company'] ? ' — ' . htmlspecialchars($r['company']) : '' ?></div>
+          <div><strong><?= h($r['name']) ?></strong><?= $r['company'] ? ' — ' . h($r['company']) : '' ?></div>
           <div class="stars"><?= str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5-(int)$r['rating']) ?></div>
-          <div>Одобрен: <?= htmlspecialchars($r['approved_at'] ?? '-') ?></div>
+          <div>Одобрен: <?= h($r['approved_at'] ?? '-') ?></div>
+          <div class="muted">ID: <?= (int)$r['id'] ?></div>
         </div>
-        <div class="msg"><?= htmlspecialchars($r['message']) ?></div>
+
+        <?php if (!$isEditing): ?>
+          <div class="msg"><?= h($r['message']) ?></div>
+
+          <div class="actions">
+            <a class="ed" href="?edit=<?= (int)$r['id'] ?>#a<?= (int)$r['id'] ?>" style="display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:10px;background:#2f6fed;color:#fff;">Редактирай</a>
+
+            <form method="post" onsubmit="return confirm('Да изтрия ли този отзив?');">
+              <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+              <input type="hidden" name="anchor" value="approved">
+              <button class="del" type="submit">Изтрий</button>
+            </form>
+          </div>
+        <?php else: ?>
+          <form method="post" style="margin-top:12px">
+            <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+            <input type="hidden" name="anchor" value="approved">
+
+            <div class="row">
+              <div>
+                <label>Име и фамилия *</label>
+                <input name="name" required value="<?= h($r['name']) ?>">
+              </div>
+              <div>
+                <label>Фирма (по желание)</label>
+                <input name="company" value="<?= h($r['company'] ?? '') ?>">
+              </div>
+            </div>
+
+            <div class="row3">
+              <div>
+                <label>Имейл *</label>
+                <input name="email" type="email" required value="<?= h($r['email'] ?? '') ?>">
+              </div>
+              <div>
+                <label>Оценка *</label>
+                <select name="rating" required>
+                  <?php for ($i=1; $i<=5; $i++): ?>
+                    <option value="<?= $i ?>" <?= ((int)$r['rating'] === $i) ? 'selected' : '' ?>><?= $i ?></option>
+                  <?php endfor; ?>
+                </select>
+              </div>
+              <div>
+                <label>&nbsp;</label>
+                <a href="admin-83xk2.php#approved" style="display:inline-flex;align-items:center;justify-content:center;width:100%;padding:10px 12px;border-radius:10px;border:1px solid #d9e1ef;background:#fff;color:#2f6fed;font-weight:800;">Отказ</a>
+              </div>
+            </div>
+
+            <label>Отзив *</label>
+            <textarea name="message" required><?= h($r['message']) ?></textarea>
+
+            <div class="actions">
+              <button class="ok" type="submit">Запази</button>
+
+              <form method="post" onsubmit="return confirm('Да изтрия ли този отзив?');" style="display:inline">
+                <!-- NOTE: nested form is invalid HTML; so we render delete as separate button via JS-less approach below -->
+              </form>
+
+              <button class="del" type="submit" formaction="admin-83xk2.php" formmethod="post"
+                onclick="return confirm('Да изтрия ли този отзив?');"
+                name="action" value="delete">Изтрий</button>
+
+              <!-- For the delete button above we need required hidden fields too -->
+              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+            </div>
+
+            <div class="muted">Съвет: след “Запази” или “Изтрий” ще те върне към секцията Одобрени.</div>
+          </form>
+        <?php endif; ?>
       </div>
     <?php endforeach; ?>
   </div>
