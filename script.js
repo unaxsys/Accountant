@@ -171,3 +171,76 @@ if (testimonialNext) {
 if (testimonialText && testimonialAuthor) {
   renderTestimonial();
 }
+
+const PHP_BASE = "http://46.183.117.128:8791";
+
+async function loadApprovedReviews() {
+  const box = document.getElementById("reviewsList");
+  if (!box) return;
+
+  try {
+    const res = await fetch(`${PHP_BASE}/reviews.php?limit=50`, { cache: "no-store" });
+    const json = await res.json();
+    if (!json.ok) throw new Error("Failed");
+
+    const items = json.reviews || [];
+    if (!items.length) {
+      box.innerHTML = "<p>Все още няма публикувани отзиви.</p>";
+      return;
+    }
+
+    box.innerHTML = items
+      .map(r => {
+        const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
+        const name = escapeHtml(r.name || "");
+        const company = r.company ? ` — ${escapeHtml(r.company)}` : "";
+        const msg = escapeHtml(r.message || "");
+        return `
+          <div class="review-card">
+            <div class="review-meta">
+              <div class="review-name">${name}${company}</div>
+              <div class="review-stars">${stars}</div>
+            </div>
+            <div class="review-text">${msg}</div>
+          </div>
+        `;
+      })
+      .join("");
+  } catch (e) {
+    box.innerHTML = "<p>Не успяхме да заредим отзивите. Опитайте по-късно.</p>";
+  }
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  })[m]);
+}
+
+async function wireReviewForm() {
+  const form = document.getElementById("reviewForm");
+  const msg = document.getElementById("reviewMsg");
+  if (!form) return;
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (msg) msg.textContent = "Изпращане…";
+
+    const fd = new FormData(form);
+    try {
+      const res = await fetch(`${PHP_BASE}/submit-review.php`, { method: "POST", body: fd });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.message || "Грешка");
+
+      form.reset();
+      if (msg) msg.textContent = json.message || "Готово!";
+
+      // не презареждаме отзивите, защото е pending (чака одобрение)
+    } catch (err) {
+      if (msg) msg.textContent = (err && err.message) ? err.message : "Грешка при изпращане.";
+    }
+  });
+}
+
+loadApprovedReviews();
+wireReviewForm();

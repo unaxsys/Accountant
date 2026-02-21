@@ -632,3 +632,20 @@ footer {
     min-height: 220px;
   }
 }
+
+.reviews { margin: 40px auto; max-width: 1100px; padding: 0 16px; }
+.reviews h2 { margin: 0 0 16px; }
+.reviews-list { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 18px; }
+.review-card { background: #fff; border: 1px solid #e6eaf2; border-radius: 14px; padding: 14px; box-shadow: 0 10px 24px rgba(0,0,0,.05); }
+.review-meta { display:flex; gap:10px; flex-wrap:wrap; color:#667; font-size:12px; align-items:center; }
+.review-name { font-weight:800; color:#1b2b3a; }
+.review-stars { color:#f5b301; font-weight:900; letter-spacing:1px; }
+.review-text { margin-top:10px; white-space:pre-wrap; color:#223; }
+
+.review-form-wrap { margin-top: 18px; background:#fff; border:1px solid #e6eaf2; border-radius:14px; padding:16px; box-shadow: 0 10px 24px rgba(0,0,0,.05); }
+.review-form .row { display:flex; flex-direction:column; gap:6px; margin:10px 0; }
+.review-form input, .review-form select, .review-form textarea {
+  border:1px solid #d9e1ef; border-radius:10px; padding:10px 12px; font: inherit;
+}
+.review-msg { margin: 10px 0 0; font-weight:700; }
+.review-note { margin: 8px 0 0; color:#667; font-size:12px; }
