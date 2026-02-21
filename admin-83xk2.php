@@ -106,7 +106,16 @@ if (!is_admin()) {
       .err{margin-top:10px;color:#b00020;font-size:13px}
       .note{margin-top:10px;color:#667;font-size:12px}
     </style>
-  </head>
+      <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-NBCQS8P4KP');
+    </script>
+</head>
   <body>
     <div class="wrap">
       <h1>Вход за администратор</h1>
@@ -258,6 +267,15 @@ $msg = (string)($_GET['msg'] ?? '');
     .toplinks{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     .cancel{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:10px 12px;border-radius:10px;border:1px solid #d9e1ef;background:#fff;color:#2f6fed;font-weight:800;text-decoration:none}
   </style>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-NBCQS8P4KP');
+    </script>
 </head>
 <body>
 <header>
