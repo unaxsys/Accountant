@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>[Заглавие на статия] | Магос ЕООД</title>
+    <title>Статии | Магос ЕООД</title>
     <meta
       name="description"
-      content="[Уникално мета описание на статията]"
+      content="Практични статии за счетоводство, ДДС и ТРЗ за собственици и мениджъри."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -68,34 +68,43 @@
     </aside>
     <div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
 
-    <main class="article-wrap">
-      <article class="card article-content">
-        <h1>[H1 заглавие]</h1>
-        <p class="article-meta"><span>[дата]</span><span>~ [X] мин. четене</span></p>
-        <p>[Кратък уводен абзац]</p>
+    <main>
+      <section class="process">
+        <p class="tag">Полезни материали</p>
+        <h1>Статии и насоки за по-сигурен финансов контрол</h1>
+        <p class="subtitle">
+          Подготвяме теми, които най-често вълнуват управители и екипи: ДДС регистрация, срокове,
+          ТРЗ процеси и практични стъпки за избягване на грешки.
+        </p>
 
-        <h2>[Подзаглавие H2]</h2>
-        <p>[Параграф]</p>
-
-        <h3>[Подзаглавие H3]</h3>
-        <ul>
-          <li>[Точка 1]</li>
-          <li>[Точка 2]</li>
-          <li>[Точка 3]</li>
-        </ul>
-
-        <div class="cta-box">
-          <h3>Свържете се с нас</h3>
-          <p>
-            Ако искате ясен процес, контрол на сроковете и спокойствие при работа с НАП,
-            изпратете запитване и ще подготвим конкретна оферта според дейността ви.
-          </p>
-          <div class="hero-actions">
-            <button class="btn quote-open" type="button">Запитване</button>
-            <a class="btn btn-ghost" href="/#contact">Към контактите</a>
-          </div>
+        <div class="hero-actions" style="margin-top: 1rem;">
+          <a class="btn btn-ghost" href="/">← Към началната страница</a>
         </div>
-      </article>
+      </section>
+
+      <section class="cards" id="articles-list" aria-live="polite">
+        <article class="card">
+          <p class="tag">15.01.2026</p>
+          <h3>ДДС регистрация: кога е задължителна и как да се подготвите без излишен риск</h3>
+          <p>Ключови прагове, практически стъпки за подготовка и най-честите грешки в първите месеци след регистрация.</p>
+          <a class="btn btn-ghost" href="/statii/dds-registracia/">Прочети</a>
+        </article>
+
+        <article class="card">
+          <p class="tag">22.01.2026</p>
+          <h3>ДДС срокове: как да подредите месечен календар, който предпазва от санкции</h3>
+          <p>Примерен месечен график, контролни точки и организация на екипа за спокойна и навременна отчетност.</p>
+          <a class="btn btn-ghost" href="/statii/dds-srokove/">Прочети</a>
+        </article>
+
+        <article class="card">
+          <p class="tag">30.01.2026</p>
+          <h3>ТРЗ грешки при малки екипи: как да намалите риска и да запазите доверието</h3>
+          <p>Най-честите пропуски в ТРЗ цикъла и практични мерки за сигурни заплати, документи и вътрешен контрол.</p>
+          <a class="btn btn-ghost" href="/statii/trz-greshki/">Прочети</a>
+        </article>
+      </section>
+      <p id="articles-empty" class="subtitle" style="display:none; margin-top: 1.5rem;"></p>
     </main>
 
     <dialog id="quote-dialog" class="quote-dialog">

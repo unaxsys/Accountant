@@ -3,6 +3,14 @@
   Require all denied
 </Files>
 
+# Ensure /statii opens the dedicated articles directory page.
+# Some hosts may resolve extensionless URLs unexpectedly (e.g. to other routes),
+# so we force a canonical redirect to /statii/.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^statii$ /statii/ [R=301,L]
+</IfModule>
+
 # (по желание) Ако искаш винаги HTTPS след като пуснеш SSL:
 # RewriteEngine On
 # RewriteCond %{HTTPS} !=on
