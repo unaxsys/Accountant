@@ -183,13 +183,17 @@
 
       <section class="testimonials" id="testimonials">
         <h2>Какво казват нашите клиенти</h2>
-        <article class="testimonial-card">
-          <p id="testimonial-text"></p>
-          <strong id="testimonial-author"></strong>
-        </article>
-        <div class="testimonial-controls">
-          <button class="btn btn-ghost" id="testimonial-prev" type="button">← Предишно</button>
-          <button class="btn" id="testimonial-next" type="button">Следващо →</button>
+        <div class="testimonial-slider">
+          <div id="testimonialsTrack" class="testimonial-track">
+            <div class="testimonial-card">
+              <p class="muted">Зареждане на отзиви…</p>
+            </div>
+          </div>
+
+          <div class="testimonial-nav">
+            <button type="button" id="testPrev" class="btn btn-ghost">← Предишно</button>
+            <button type="button" id="testNext" class="btn">Следващо →</button>
+          </div>
         </div>
       </section>
 
@@ -248,15 +252,15 @@
       </section>      
 
       <section class="reviews" id="reviews">
-        <h2>Отзиви от клиенти</h2>
+        <h2>Оставете отзив</h2>
 
-        <div id="reviewsList" class="reviews-list">
-          <p>Зареждане на отзиви…</p>
-        </div>
+        <div class="leave-review">
+          <button type="button" id="toggleReviewForm" class="leave-review-toggle" aria-expanded="false">
+            Остави отзив
+          </button>
 
-        <div class="review-form-wrap">
-          <h3>Оставете отзив</h3>
-          <form id="reviewForm" class="review-form">
+          <div id="reviewFormWrap" class="review-form-wrap is-collapsed">
+            <form id="reviewForm" class="review-form">
             <!-- Honeypot (скрито) -->
             <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off" />
 
@@ -295,7 +299,8 @@
             <button type="submit" class="btn">Изпрати</button>
             <p id="reviewMsg" class="review-msg" aria-live="polite"></p>
             <p class="review-note">Отзивът се публикува след одобрение.</p>
-          </form>
+            </form>
+          </div>
         </div>
       </section>
 

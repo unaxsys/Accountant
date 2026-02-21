@@ -460,18 +460,42 @@ h1 {
   text-align: center;
 }
 
-.testimonial-card p {
-  font-size: 1.1rem;
-  margin: 0;
+.testimonial-track {
+  position: relative;
 }
 
-.testimonial-card strong {
-  margin-top: 0.7rem;
+.testimonial-slide {
+  display: none;
+}
+
+.testimonial-slide.is-active {
   display: block;
-  color: #254eab;
 }
 
-.testimonial-controls {
+.testimonial-text {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.testimonial-meta {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.testimonial-name {
+  font-weight: 800;
+}
+
+.testimonial-stars {
+  color: #f5b301;
+  font-weight: 900;
+}
+
+.testimonial-nav {
   margin-top: 1rem;
   display: flex;
   justify-content: center;
@@ -635,17 +659,38 @@ footer {
 
 .reviews { margin: 40px auto; max-width: 1100px; padding: 0 16px; }
 .reviews h2 { margin: 0 0 16px; }
-.reviews-list { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 18px; }
-.review-card { background: #fff; border: 1px solid #e6eaf2; border-radius: 14px; padding: 14px; box-shadow: 0 10px 24px rgba(0,0,0,.05); }
-.review-meta { display:flex; gap:10px; flex-wrap:wrap; color:#667; font-size:12px; align-items:center; }
-.review-name { font-weight:800; color:#1b2b3a; }
-.review-stars { color:#f5b301; font-weight:900; letter-spacing:1px; }
-.review-text { margin-top:10px; white-space:pre-wrap; color:#223; }
 
-.review-form-wrap { margin-top: 18px; background:#fff; border:1px solid #e6eaf2; border-radius:14px; padding:16px; box-shadow: 0 10px 24px rgba(0,0,0,.05); }
+.leave-review-toggle {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #d9e1ef;
+  background: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.review-form-wrap {
+  margin-top: 12px;
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.05);
+}
+
+.review-form-wrap.is-collapsed {
+  display: none;
+}
+
 .review-form .row { display:flex; flex-direction:column; gap:6px; margin:10px 0; }
 .review-form input, .review-form select, .review-form textarea {
   border:1px solid #d9e1ef; border-radius:10px; padding:10px 12px; font: inherit;
 }
 .review-msg { margin: 10px 0 0; font-weight:700; }
 .review-note { margin: 8px 0 0; color:#667; font-size:12px; }
+
+.muted {
+  color: var(--muted);
+}
