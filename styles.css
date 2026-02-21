@@ -753,7 +753,7 @@ footer {
 }
 
 .blog-page {
-  max-width: 1120px;
+  max-width: 1320px;
   margin: 80px auto 40px;
   padding: 0 16px;
 }
@@ -857,7 +857,7 @@ footer {
 }
 
 .blog-article {
-  max-width: 1200px;
+  max-width: 900px;
   margin: 80px auto 40px;
   padding: 0 16px;
 }
