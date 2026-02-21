@@ -2,9 +2,21 @@
 <html lang="bg">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=/statii/index.php" />
-    <link rel="canonical" href="/statii/index.php" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Пренасочване...</title>
+    <script>
+      (function () {
+        var path = window.location.pathname.replace(/\/+$/, '');
+        var slugMatch = path.match(/^\/statii\/([^\/]+)$/);
+
+        if (slugMatch && slugMatch[1] !== 'index.html' && slugMatch[1] !== 'index.php') {
+          window.location.replace('/statii/article.php?slug=' + encodeURIComponent(slugMatch[1]));
+          return;
+        }
+
+        window.location.replace('/statii/index.php');
+      })();
+    </script>
   </head>
   <body>
     <p>Ако не сте пренасочени автоматично, отворете <a href="/statii/index.php">Статии</a>.</p>
