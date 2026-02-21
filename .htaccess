@@ -3,12 +3,16 @@
   Require all denied
 </Files>
 
+DirectoryIndex index.html index.php
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
-  # Canonical: /statii -> /statii/
+  # ✅ Canonical: /statii -> /statii/
   RewriteRule ^statii$ /statii/ [R=301,L]
 
-  # Allow the /statii/ folder and everything inside it (no rewrites)
-  RewriteRule ^statii/ - [L]
+  # ✅ Force /statii/ to open its index.html (NOT the site root index.html)
+  RewriteRule ^statii/$ /statii/index.html [L]
+
+  # (ако имаш правило което праща всичко към /index.html, трябва да е СЛЕД тези 2 горни)
 </IfModule>
