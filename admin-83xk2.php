@@ -5,6 +5,8 @@ require_once __DIR__ . '/config.php';
 
 session_start();
 
+/** ---------------- Helpers ---------------- */
+
 function csrf_token(): string {
   if (empty($_SESSION['csrf'])) $_SESSION['csrf'] = bin2hex(random_bytes(16));
   return $_SESSION['csrf'];
@@ -14,29 +16,12 @@ function is_admin(): bool {
   return !empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
 }
 
-function require_admin_or_404() {
+function require_admin_or_404(): void {
   if (!is_admin()) {
     http_response_code(404);
     echo "Not Found";
     exit;
   }
-}
-
-function h($s): string {
-  return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
-
-function redirect_with_msg(string $msg, string $anchor = '', int $editId = 0): void {
-  $q = [];
-  if ($msg !== '') $q['msg'] = $msg;
-  if ($editId > 0) $q['edit'] = (string)$editId;
-
-  $url = 'admin-83xk2.php';
-  if (!empty($q)) $url .= '?' . http_build_query($q);
-  if ($anchor !== '') $url .= '#' . rawurlencode($anchor);
-
-  header('Location: ' . $url);
-  exit;
 }
 
 function require_csrf_or_400(): void {
@@ -46,6 +31,35 @@ function require_csrf_or_400(): void {
     exit;
   }
 }
+
+function h($s): string {
+  return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+/**
+ * Safe substring: uses mb_substr if available, otherwise falls back to substr.
+ * This prevents HTTP 500 when php-mbstring is not installed.
+ */
+function cut($s, int $max): string {
+  $s = (string)$s;
+  if ($max <= 0) return '';
+  if (function_exists('mb_substr')) {
+    return mb_substr($s, 0, $max, 'UTF-8');
+  }
+  return substr($s, 0, $max);
+}
+
+function redirect_with_msg(string $anchor = '', string $msg = ''): void {
+  $to = 'admin-83xk2.php';
+  $qs = [];
+  if ($msg !== '') $qs['msg'] = $msg;
+  if ($qs) $to .= '?' . http_build_query($qs);
+  if ($anchor !== '') $to .= '#' . rawurlencode($anchor);
+  header('Location: ' . $to);
+  exit;
+}
+
+/** ---------------- Bootstrap ---------------- */
 
 $pdo = db();
 
@@ -58,7 +72,7 @@ if (isset($_GET['logout'])) {
 
 // Login submit
 $login_error = '';
-if (!is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'login') {
+if (!is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'login')) {
   $u = (string)($_POST['username'] ?? '');
   $p = (string)($_POST['password'] ?? '');
 
@@ -88,7 +102,7 @@ if (!is_admin()) {
       h1{font-size:18px;margin:0 0 14px}
       label{display:block;font-size:12px;color:#334;margin-top:10px}
       input{width:100%;padding:10px 12px;border:1px solid #d9e1ef;border-radius:10px;margin-top:6px}
-      button{width:100%;margin-top:14px;padding:10px 12px;border:0;border-radius:10px;background:#2f6fed;color:#fff;font-weight:700;cursor:pointer}
+      button{width:100%;margin-top:14px;padding:10px 12px;border:0;border-radius:10px;background:#2f6fed;color:#fff;font-weight:800;cursor:pointer}
       .err{margin-top:10px;color:#b00020;font-size:13px}
       .note{margin-top:10px;color:#667;font-size:12px}
     </style>
@@ -115,8 +129,10 @@ if (!is_admin()) {
 
 // Admin actions
 require_admin_or_404();
+csrf_token();
 
-// Approve / Delete / Update
+/** ---------------- Actions ---------------- */
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $action = (string)($_POST['action'] ?? '');
 
@@ -125,68 +141,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $id = (int)($_POST['id'] ?? 0);
     $anchor = (string)($_POST['anchor'] ?? '');
+    if ($anchor === '') $anchor = 'pending';
 
-    if ($id <= 0) {
-      redirect_with_msg('Невалиден ID.', $anchor ?: 'pending');
-    }
-
-    if ($action === 'approve') {
-      $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at=:t WHERE id=:id");
-      $stmt->execute([':t' => gmdate('c'), ':id' => $id]);
-      redirect_with_msg('Отзивът е одобрен.', $anchor ?: 'pending');
-    }
-
-    if ($action === 'delete') {
-      $stmt = $pdo->prepare("DELETE FROM reviews WHERE id=:id");
-      $stmt->execute([':id' => $id]);
-      redirect_with_msg('Отзивът е изтрит.', $anchor ?: 'approved');
-    }
-
-    if ($action === 'update') {
-      $name = trim((string)($_POST['name'] ?? ''));
-      $company = trim((string)($_POST['company'] ?? ''));
-      $email = trim((string)($_POST['email'] ?? ''));
-      $rating = (int)($_POST['rating'] ?? 5);
-      $message = trim((string)($_POST['message'] ?? ''));
-
-      if ($name === '' || $email === '' || $message === '') {
-        // връщаме те пак в edit режим на същия отзив
-        redirect_with_msg('Моля попълни: Име, Имейл и Отзив.', $anchor ?: 'approved', $id);
+    if ($id > 0) {
+      if ($action === 'approve') {
+        $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at=:t WHERE id=:id");
+        $stmt->execute([':t' => gmdate('c'), ':id' => $id]);
+        redirect_with_msg('approved', 'Отзивът е одобрен.');
       }
 
-      if ($rating < 1) $rating = 1;
-      if ($rating > 5) $rating = 5;
+      if ($action === 'delete') {
+        $stmt = $pdo->prepare("DELETE FROM reviews WHERE id=:id");
+        $stmt->execute([':id' => $id]);
+        redirect_with_msg($anchor, 'Отзивът е изтрит.');
+      }
 
-      // basic limits
-      $name = mb_substr($name, 0, 120);
-      $company = mb_substr($company, 0, 120);
-      $email = mb_substr($email, 0, 190);
-      $message = mb_substr($message, 0, 2000);
+      if ($action === 'update') {
+        $name = trim((string)($_POST['name'] ?? ''));
+        $company = trim((string)($_POST['company'] ?? ''));
+        $email = trim((string)($_POST['email'] ?? ''));
+        $rating = (int)($_POST['rating'] ?? 5);
+        $message = trim((string)($_POST['message'] ?? ''));
 
-      $stmt = $pdo->prepare("
-        UPDATE reviews
-        SET name=:name, company=:company, email=:email, rating=:rating, message=:message
-        WHERE id=:id
-      ");
-      $stmt->execute([
-        ':name' => $name,
-        ':company' => $company,
-        ':email' => $email,
-        ':rating' => $rating,
-        ':message' => $message,
-        ':id' => $id,
-      ]);
+        if ($name === '' || $email === '' || $message === '') {
+          redirect_with_msg('approved', 'Моля попълни: Име, Имейл и Отзив.');
+        }
 
-      redirect_with_msg('Промените са запазени.', $anchor ?: 'approved');
+        if ($rating < 1) $rating = 1;
+        if ($rating > 5) $rating = 5;
+
+        // length limits (safe even without mbstring)
+        $name = cut($name, 120);
+        $company = cut($company, 120);
+        $email = cut($email, 190);
+        $message = cut($message, 2000);
+
+        $stmt = $pdo->prepare("
+          UPDATE reviews
+          SET name=:name, company=:company, email=:email, rating=:rating, message=:message
+          WHERE id=:id
+        ");
+        $stmt->execute([
+          ':name' => $name,
+          ':company' => $company,
+          ':email' => $email,
+          ':rating' => $rating,
+          ':message' => $message,
+          ':id' => $id,
+        ]);
+
+        redirect_with_msg('approved', 'Промените са запазени.');
+      }
     }
+
+    redirect_with_msg($anchor, 'Невалиден отзив.');
   }
 }
 
-// Data for view
+/** ---------------- Data for view ---------------- */
+
 $pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY datetime(created_at) DESC")->fetchAll();
 $approved = $pdo->query("SELECT * FROM reviews WHERE status='approved' ORDER BY datetime(approved_at) DESC, datetime(created_at) DESC LIMIT 200")->fetchAll();
-
 $editId = (int)($_GET['edit'] ?? 0);
+$msg = (string)($_GET['msg'] ?? '');
 ?>
 <!doctype html>
 <html lang="bg">
@@ -208,7 +225,7 @@ $editId = (int)($_GET['edit'] ?? 0);
     button{padding:9px 12px;border-radius:10px;border:0;cursor:pointer;font-weight:800}
     .ok{background:#20a55f;color:#fff}
     .del{background:#e24343;color:#fff}
-    .ed{background:#2f6fed;color:#fff}
+    .edbtn{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:10px;background:#2f6fed;color:#fff;font-weight:800;text-decoration:none}
     a{color:#2f6fed;text-decoration:none;font-weight:800}
     .badge{display:inline-flex;align-items:center;gap:8px;background:#eef4ff;color:#2f6fed;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:800}
     .stars{color:#f5b301;font-weight:900}
@@ -221,10 +238,7 @@ $editId = (int)($_GET['edit'] ?? 0);
     textarea{min-height:110px;resize:vertical}
     .muted{color:#667;font-size:12px}
     .toplinks{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    .btnlink{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:10px;font-weight:800}
-    .btnlink.ed{background:#2f6fed;color:#fff}
-    .btnlink.cancel{border:1px solid #d9e1ef;background:#fff;color:#2f6fed}
-    form{margin:0}
+    .cancel{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:10px 12px;border-radius:10px;border:1px solid #d9e1ef;background:#fff;color:#2f6fed;font-weight:800;text-decoration:none}
   </style>
 </head>
 <body>
@@ -237,8 +251,8 @@ $editId = (int)($_GET['edit'] ?? 0);
   </div>
 </header>
 
-<?php if (!empty($_GET['msg'])): ?>
-  <div class="flash"><div><?= h((string)$_GET['msg']) ?></div></div>
+<?php if ($msg !== ''): ?>
+  <div class="flash"><div><?= h($msg) ?></div></div>
 <?php endif; ?>
 
 <div class="wrap">
@@ -255,9 +269,7 @@ $editId = (int)($_GET['edit'] ?? 0);
           <div class="stars"><?= str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5-(int)$r['rating']) ?></div>
           <div><?= h($r['email'] ?? '') ?></div>
           <div><?= h($r['created_at']) ?></div>
-          <div class="muted">ID: <?= (int)$r['id'] ?></div>
         </div>
-
         <div class="msg"><?= h($r['message']) ?></div>
 
         <div class="actions">
@@ -288,25 +300,25 @@ $editId = (int)($_GET['edit'] ?? 0);
     <?php endif; ?>
 
     <?php foreach ($approved as $r): ?>
-      <?php $isEditing = ($editId > 0 && $editId === (int)$r['id']); ?>
-      <div class="card" id="a<?= (int)$r['id'] ?>">
+      <?php $id = (int)$r['id']; $isEditing = ($editId > 0 && $editId === $id); ?>
+      <div class="card" id="a<?= $id ?>">
         <div class="meta">
           <div><strong><?= h($r['name']) ?></strong><?= $r['company'] ? ' — ' . h($r['company']) : '' ?></div>
           <div class="stars"><?= str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5-(int)$r['rating']) ?></div>
           <div>Одобрен: <?= h($r['approved_at'] ?? '-') ?></div>
-          <div class="muted">ID: <?= (int)$r['id'] ?></div>
+          <div class="muted">ID: <?= $id ?></div>
         </div>
 
         <?php if (!$isEditing): ?>
           <div class="msg"><?= h($r['message']) ?></div>
 
           <div class="actions">
-            <a class="btnlink ed" href="?edit=<?= (int)$r['id'] ?>#a<?= (int)$r['id'] ?>">Редактирай</a>
+            <a class="edbtn" href="?edit=<?= $id ?>#a<?= $id ?>">Редактирай</a>
 
             <form method="post" onsubmit="return confirm('Да изтрия ли този отзив?');">
               <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
               <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+              <input type="hidden" name="id" value="<?= $id ?>">
               <input type="hidden" name="anchor" value="approved">
               <button class="del" type="submit">Изтрий</button>
             </form>
@@ -315,7 +327,7 @@ $editId = (int)($_GET['edit'] ?? 0);
           <form method="post" style="margin-top:12px">
             <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="update">
-            <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+            <input type="hidden" name="id" value="<?= $id ?>">
             <input type="hidden" name="anchor" value="approved">
 
             <div class="row">
@@ -344,7 +356,7 @@ $editId = (int)($_GET['edit'] ?? 0);
               </div>
               <div>
                 <label>&nbsp;</label>
-                <a class="btnlink cancel" href="admin-83xk2.php#approved">Отказ</a>
+                <a class="cancel" href="admin-83xk2.php#approved">Отказ</a>
               </div>
             </div>
 
@@ -355,17 +367,16 @@ $editId = (int)($_GET['edit'] ?? 0);
               <button class="ok" type="submit">Запази</button>
             </div>
 
-            <div class="muted">Съвет: след “Запази” ще те върне към секцията “Одобрени”.</div>
+            <div class="muted">След “Запази” ще те върне към секцията “Одобрени”.</div>
           </form>
 
-          <!-- ВАЖНО: Delete е ОТДЕЛНА форма (без nested form) -->
           <div class="actions" style="margin-top:10px">
             <form method="post" onsubmit="return confirm('Да изтрия ли този отзив?');">
               <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
               <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+              <input type="hidden" name="id" value="<?= $id ?>">
               <input type="hidden" name="anchor" value="approved">
-              <button class="del" type="submit">Изтрий</button>
+              <button class="del" type="submit">Изтрий този отзив</button>
             </form>
           </div>
         <?php endif; ?>
