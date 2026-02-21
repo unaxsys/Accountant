@@ -753,7 +753,7 @@ footer {
 }
 
 .blog-page {
-  max-width: 1120px;
+  max-width: 1320px;
   margin: 80px auto 40px;
   padding: 0 16px;
 }
@@ -790,7 +790,7 @@ footer {
 .blog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 25px;
+  gap: 55px;
   margin-top: 28px;
 }
 
@@ -964,7 +964,7 @@ footer {
 .blog-article h1 {
   font-size: 48px;
   line-height: 1.15;
-  max-width: 1400px;
+  max-width: 1600px;
   margin: 0 0 40px 0;
 }
 .blog-article h1,
