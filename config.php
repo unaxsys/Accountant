@@ -16,12 +16,5 @@ define('NOTIFY_EMAIL', 'office@magos.bg');
 
 // Базов сайт URL (по желание)
 define('SITE_NAME', 'Магос ЕООД');
-//
 
-// MySQL (SiteGround/shared hosting) за blog/posts
-define('MYSQL_HOST', getenv('MYSQL_HOST') ?: 'localhost');
-define('MYSQL_PORT', getenv('MYSQL_PORT') ?: '3306');
-define('MYSQL_DB', getenv('MYSQL_DB') ?: '');
-define('MYSQL_USER', getenv('MYSQL_USER') ?: '');
-define('MYSQL_PASS', getenv('MYSQL_PASS') ?: '');
-define('SITE_URL', getenv('SITE_URL') ?: 'https://magos.bg');
+require_once __DIR__ . '/includes/config.php';

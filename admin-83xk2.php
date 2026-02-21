@@ -2,7 +2,7 @@
 // admin-83xk2.php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/posts_lib.php';
+require_once __DIR__ . '/includes/db.php';
 
 session_start();
 
@@ -40,6 +40,44 @@ function require_csrf_or_400(): void {
 
 function h($s): string {
   return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+function slugify_post(string $text): string {
+  $text = trim(mb_strtolower($text, 'UTF-8'));
+  $map = ['а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ж'=>'zh','з'=>'z','и'=>'i','й'=>'y','к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u','ф'=>'f','х'=>'h','ц'=>'ts','ч'=>'ch','ш'=>'sh','щ'=>'sht','ъ'=>'a','ь'=>'','ю'=>'yu','я'=>'ya'];
+  $text = strtr($text, $map);
+  $text = preg_replace('/[^a-z0-9]+/u', '-', $text);
+  $text = trim((string)$text, '-');
+  return $text !== '' ? $text : 'statia';
+}
+
+function unique_post_slug(PDO $pdo, string $base, ?int $ignoreId = null): string {
+  $slug = $base;
+  $i = 1;
+  while (true) {
+    $sql = 'SELECT id FROM posts WHERE slug = :slug';
+    $params = [':slug' => $slug];
+    if ($ignoreId !== null) {
+      $sql .= ' AND id != :id';
+      $params[':id'] = $ignoreId;
+    }
+    $stmt = $pdo->prepare($sql . ' LIMIT 1');
+    $stmt->execute($params);
+    if (!$stmt->fetch()) return $slug;
+    $slug = $base . '-' . $i;
+    $i++;
+  }
+}
+
+function sanitize_trusted_html(string $html): string {
+  $html = preg_replace('#<script\b[^>]*>(.*?)</script>#is', '', $html) ?? $html;
+  return $html;
+}
+
+function utf8_cut(string $text, int $max): string {
+  if ($max <= 0) return '';
+  if (function_exists('mb_substr')) return mb_substr($text, 0, $max, 'UTF-8');
+  return substr($text, 0, $max);
 }
 
 $ARTICLES_FILE = __DIR__ . '/articles.json';
@@ -273,35 +311,39 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     $slugIn = trim((string)($_POST['slug'] ?? ''));
     $meta = trim((string)($_POST['meta_description'] ?? ''));
     $excerpt = trim((string)($_POST['excerpt'] ?? ''));
-    $content = trim((string)($_POST['content_html'] ?? ''));
+    $content = sanitize_trusted_html(trim((string)($_POST['content_html'] ?? '')));
     $tags = trim((string)($_POST['tags'] ?? ''));
-    $status = (string)($_POST['status'] ?? 'draft');
+    $status = !empty($_POST['publish_now']) ? 'published' : 'draft';
 
     if ($title === '' || $content === '') {
       throw new RuntimeException('Заглавие и съдържание са задължителни.');
     }
 
-    if (!in_array($status, ['draft', 'published'], true)) {
-      $status = 'draft';
-    }
 
-    $pdoPosts = posts_db();
+    $pdoPosts = posts_pdo();
     $slug = unique_post_slug($pdoPosts, slugify_post($slugIn !== '' ? $slugIn : $title), $postId > 0 ? $postId : null);
 
     $coverImage = null;
     if (!empty($_FILES['cover_image']['name']) && is_uploaded_file($_FILES['cover_image']['tmp_name'])) {
       $ext = strtolower(pathinfo((string)$_FILES['cover_image']['name'], PATHINFO_EXTENSION));
-      if (!in_array($ext, ['jpg','jpeg','png','webp','gif'], true)) {
-        throw new RuntimeException('Невалиден формат за cover image.');
+      if (!in_array($ext, ['jpg','jpeg','png','webp'], true)) {
+        throw new RuntimeException('Невалиден формат за cover image (jpg, jpeg, png, webp).');
       }
-      $uploadDir = __DIR__ . '/uploads/posts';
-      if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
-      $fname = date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
+      $maxSize = 5 * 1024 * 1024;
+      if ((int)($_FILES['cover_image']['size'] ?? 0) > $maxSize) {
+        throw new RuntimeException('Файлът е твърде голям (макс. 5MB).');
+      }
+      $uploadDir = __DIR__ . '/uploads/blog';
+      if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+        throw new RuntimeException('Не може да се създаде upload папката.');
+      }
+      $safeBase = slugify_post($slug !== '' ? $slug : $title);
+      $fname = $safeBase . '-' . time() . '-' . bin2hex(random_bytes(3)) . '.' . $ext;
       $target = $uploadDir . '/' . $fname;
       if (!move_uploaded_file($_FILES['cover_image']['tmp_name'], $target)) {
         throw new RuntimeException('Неуспешно качване на cover image.');
       }
-      $coverImage = '/uploads/posts/' . $fname;
+      $coverImage = '/uploads/blog/' . $fname;
     }
 
     $now = date('Y-m-d H:i:s');
@@ -349,7 +391,7 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['act
   try {
     $postId = (int)($_POST['id'] ?? 0);
     if ($postId > 0) {
-      $pdoPosts = posts_db();
+      $pdoPosts = posts_pdo();
       if (($_POST['action'] ?? '') === 'article_publish') {
         $st = $pdoPosts->prepare("UPDATE posts SET status='published', published_at=COALESCE(published_at,:now), updated_at=:now WHERE id=:id");
       } else {
@@ -365,11 +407,16 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['act
   }
 }
 
-if (is_admin() && isset($_GET['article_delete'])) {
+
+if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'article_delete')) {
+  if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
+    http_response_code(400);
+    exit('Bad CSRF');
+  }
   try {
-    $id = (int)$_GET['article_delete'];
+    $id = (int)($_POST['id'] ?? 0);
     if ($id > 0) {
-      $pdoPosts = posts_db();
+      $pdoPosts = posts_pdo();
       $d = $pdoPosts->prepare('DELETE FROM posts WHERE id=:id');
       $d->execute([':id' => $id]);
     }
@@ -380,11 +427,40 @@ if (is_admin() && isset($_GET['article_delete'])) {
   }
 }
 
+if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'article_seed')) {
+  if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
+    http_response_code(400);
+    exit('Bad CSRF');
+  }
+  try {
+    $pdoPosts = posts_pdo();
+    $baseSlug = unique_post_slug($pdoPosts, 'testova-statia');
+    $now = date('Y-m-d H:i:s');
+    $stmt = $pdoPosts->prepare('INSERT INTO posts (slug,title,meta_description,excerpt,content_html,cover_image,tags,status,published_at,created_at,updated_at) VALUES (:slug,:title,:meta,:excerpt,:content,:cover,:tags,:status,:published_at,:created_at,:updated_at)');
+    $stmt->execute([
+      ':slug' => $baseSlug,
+      ':title' => 'Тестова статия',
+      ':meta' => 'Това е тестова SEO meta description за проверка на блога.',
+      ':excerpt' => 'Кратко описание на тестовата статия за проверка на листинга.',
+      ':content' => '<p>Това е тестово съдържание.</p>',
+      ':cover' => null,
+      ':tags' => 'тест,пример',
+      ':status' => 'published',
+      ':published_at' => $now,
+      ':created_at' => $now,
+      ':updated_at' => $now,
+    ]);
+    header('Location: admin-83xk2.php?tab=articles');
+    exit;
+  } catch (Throwable $e) {
+    $article_flash = $e->getMessage();
+  }
+}
 if (is_admin() && isset($_GET['article_edit'])) {
   try {
     $id = (int)$_GET['article_edit'];
     if ($id > 0) {
-      $pdoPosts = posts_db();
+      $pdoPosts = posts_pdo();
       $s = $pdoPosts->prepare('SELECT * FROM posts WHERE id=:id LIMIT 1');
       $s->execute([':id' => $id]);
       $article_edit = $s->fetch() ?: null;
@@ -395,7 +471,7 @@ if (is_admin() && isset($_GET['article_edit'])) {
 }
 
 try {
-  $articles = is_admin() ? posts_db()->query('SELECT * FROM posts ORDER BY created_at DESC')->fetchAll() : [];
+  $articles = is_admin() ? posts_pdo()->query('SELECT * FROM posts ORDER BY created_at DESC LIMIT 20')->fetchAll() : [];
 } catch (Throwable $e) {
   $articles = [];
   if ($article_flash === '') {
@@ -660,11 +736,10 @@ $msg = (string)($_GET['msg'] ?? '');
         <label>Съдържание (HTML) *</label>
         <textarea name="content_html" rows="12" required style="width:100%;margin:6px 0 12px;"><?= h($article_edit['content_html'] ?? '') ?></textarea>
 
-        <label>Статус</label>
-        <select name="status" style="width:100%;margin:6px 0 12px;">
-          <option value="draft" <?= (($article_edit['status'] ?? 'draft') === 'draft') ? 'selected' : '' ?>>Draft</option>
-          <option value="published" <?= (($article_edit['status'] ?? '') === 'published') ? 'selected' : '' ?>>Published</option>
-        </select>
+        <label style="display:flex;align-items:center;gap:8px;margin:6px 0 12px;">
+          <input type="checkbox" name="publish_now" value="1" <?= (($article_edit['status'] ?? '') === 'published') ? 'checked' : '' ?>>
+          Публикувай
+        </label>
 
         <button type="submit" class="btn" style="margin-right:8px;"><?= $article_edit ? 'Запази' : 'Създай' ?></button>
         <?php if ($article_edit): ?>
@@ -674,7 +749,12 @@ $msg = (string)($_GET['msg'] ?? '');
     </div>
 
     <div class="card" style="padding:16px;">
-      <h3 style="margin-top:0;">Списък</h3>
+      <h3 style="margin-top:0;">Списък (последни 20)</h3>
+      <form method="post" style="margin-bottom:10px;">
+        <input type="hidden" name="action" value="article_seed">
+        <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+        <button type="submit" class="btn btn-ghost">Seed тестова статия</button>
+      </form>
 
       <?php foreach ($articles as $a): ?>
         <div style="border:1px solid #e6e6e6;border-radius:12px;padding:12px;margin:10px 0;">
@@ -690,15 +770,19 @@ $msg = (string)($_GET['msg'] ?? '');
           </div>
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
             <a class="btn" href="admin-83xk2.php?tab=articles&article_edit=<?= h($a['id'] ?? '') ?>">Редактирай</a>
-            <a class="btn danger" href="admin-83xk2.php?tab=articles&article_delete=<?= h($a['id'] ?? '') ?>"
-               onclick="return confirm('Да изтрия ли статията?')">Изтрий</a>
+            <form method="post" action="admin-83xk2.php?tab=articles" onsubmit="return confirm('Да изтрия ли статията?')">
+              <input type="hidden" name="action" value="article_delete">
+              <input type="hidden" name="id" value="<?= (int)$a['id'] ?>">
+              <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+              <button class="btn danger" type="submit">Изтрий</button>
+            </form>
             <?php if (($a['status'] ?? 'draft') === 'published'): ?>
               <form method="post" action="admin-83xk2.php?tab=articles">
-                <input type="hidden" name="action" value="article_unpublish"><input type="hidden" name="id" value="<?= (int)$a['id'] ?>"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><button type="submit" class="btn btn-ghost">Unpublish</button>
+                <input type="hidden" name="action" value="article_unpublish"><input type="hidden" name="id" value="<?= (int)$a['id'] ?>"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><button type="submit" class="btn btn-ghost">Скрий</button>
               </form>
             <?php else: ?>
               <form method="post" action="admin-83xk2.php?tab=articles">
-                <input type="hidden" name="action" value="article_publish"><input type="hidden" name="id" value="<?= (int)$a['id'] ?>"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><button type="submit" class="btn">Publish</button>
+                <input type="hidden" name="action" value="article_publish"><input type="hidden" name="id" value="<?= (int)$a['id'] ?>"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><button type="submit" class="btn">Публикувай</button>
               </form>
             <?php endif; ?>
           </div>
