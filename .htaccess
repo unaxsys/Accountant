@@ -1,0 +1,9 @@
+# Block direct access to sqlite db
+<Files "db.sqlite">
+  Require all denied
+</Files>
+
+# (по желание) Ако искаш винаги HTTPS след като пуснеш SSL:
+# RewriteEngine On
+# RewriteCond %{HTTPS} !=on
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
