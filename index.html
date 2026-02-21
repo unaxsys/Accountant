@@ -251,15 +251,19 @@
         </div>
       </section>      
 
-      <section class="reviews" id="reviews">
-        <h2>Оставете отзив</h2>
+      <section class="review-cta" id="reviews">
+        <h2 class="review-cta__title">Оставете отзив</h2>
 
-        <div class="leave-review">
-          <button type="button" id="toggleReviewForm" class="leave-review-toggle" aria-expanded="false">
-            Остави отзив
-          </button>
+        <button type="button" id="toggleReviewForm" class="review-cta__button" aria-expanded="false">
+          <span class="review-cta__icon" aria-hidden="true">✍️</span>
+          <span class="review-cta__text">
+            <strong>Остави отзив</strong>
+            <span class="review-cta__sub">Отнема по-малко от 1 минута</span>
+          </span>
+          <span class="review-cta__chev" aria-hidden="true">▾</span>
+        </button>
 
-          <div id="reviewFormWrap" class="review-form-wrap is-collapsed">
+          <div id="reviewFormWrap" class="review-cta__panel is-collapsed">
             <form id="reviewForm" class="review-form">
             <!-- Honeypot (скрито) -->
             <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off" />
@@ -301,7 +305,6 @@
             <p class="review-note">Отзивът се публикува след одобрение.</p>
             </form>
           </div>
-        </div>
       </section>
 
       <section class="contact" id="contact">
