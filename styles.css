@@ -977,6 +977,3 @@ footer {
 
 
 
-.blog-layout--article {
-  width: min(1040px, calc(100% - 2rem));
-}
