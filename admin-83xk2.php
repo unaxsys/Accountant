@@ -2,6 +2,7 @@
 // admin-83xk2.php
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/posts_lib.php';
 
 session_start();
 
@@ -176,7 +177,10 @@ if (!is_admin()) {
         <div class="note">Тази страница не е публично линкната.</div>
       </form>
     </div>
-  </body>
+  
+
+
+</body>
   </html>
   <?php
   exit;
@@ -263,85 +267,144 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     exit('Bad CSRF');
   }
 
-  $id = trim((string)($_POST['id'] ?? ''));
-  $title = trim((string)($_POST['title'] ?? ''));
-  $slugIn = trim((string)($_POST['slug'] ?? ''));
-  $excerpt = trim((string)($_POST['excerpt'] ?? ''));
-  $content = trim((string)($_POST['content'] ?? ''));
-  $is_published = !empty($_POST['is_published']) ? 1 : 0;
+  try {
+    $postId = (int)($_POST['id'] ?? 0);
+    $title = trim((string)($_POST['title'] ?? ''));
+    $slugIn = trim((string)($_POST['slug'] ?? ''));
+    $meta = trim((string)($_POST['meta_description'] ?? ''));
+    $excerpt = trim((string)($_POST['excerpt'] ?? ''));
+    $content = trim((string)($_POST['content_html'] ?? ''));
+    $tags = trim((string)($_POST['tags'] ?? ''));
+    $status = (string)($_POST['status'] ?? 'draft');
 
-  if ($title === '' || $content === '') {
-    $article_flash = 'Заглавие и съдържание са задължителни.';
-  } else {
-    $items = load_articles_json($ARTICLES_FILE);
-    $base = slugify_bg($slugIn !== '' ? $slugIn : $title);
-    $slug = unique_slug_json($items, $base, $id !== '' ? $id : null);
+    if ($title === '' || $content === '') {
+      throw new RuntimeException('Заглавие и съдържание са задължителни.');
+    }
 
-    if ($id === '') {
-      $id = bin2hex(random_bytes(8));
-      $items[] = [
-        'id' => $id,
-        'title' => $title,
-        'slug' => $slug,
-        'excerpt' => $excerpt,
-        'content' => $content,
-        'is_published' => $is_published,
-        'created_at' => gmdate('c'),
-        'updated_at' => gmdate('c'),
-      ];
+    if (!in_array($status, ['draft', 'published'], true)) {
+      $status = 'draft';
+    }
+
+    $pdoPosts = posts_db();
+    $slug = unique_post_slug($pdoPosts, slugify_post($slugIn !== '' ? $slugIn : $title), $postId > 0 ? $postId : null);
+
+    $coverImage = null;
+    if (!empty($_FILES['cover_image']['name']) && is_uploaded_file($_FILES['cover_image']['tmp_name'])) {
+      $ext = strtolower(pathinfo((string)$_FILES['cover_image']['name'], PATHINFO_EXTENSION));
+      if (!in_array($ext, ['jpg','jpeg','png','webp','gif'], true)) {
+        throw new RuntimeException('Невалиден формат за cover image.');
+      }
+      $uploadDir = __DIR__ . '/uploads/posts';
+      if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+      $fname = date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $ext;
+      $target = $uploadDir . '/' . $fname;
+      if (!move_uploaded_file($_FILES['cover_image']['tmp_name'], $target)) {
+        throw new RuntimeException('Неуспешно качване на cover image.');
+      }
+      $coverImage = '/uploads/posts/' . $fname;
+    }
+
+    $now = date('Y-m-d H:i:s');
+    if ($postId > 0) {
+      $rowStmt = $pdoPosts->prepare('SELECT * FROM posts WHERE id=:id LIMIT 1');
+      $rowStmt->execute([':id' => $postId]);
+      $existing = $rowStmt->fetch();
+      if (!$existing) {
+        throw new RuntimeException('Не намерих статията за редакция.');
+      }
+      if ($coverImage === null) $coverImage = $existing['cover_image'];
+      $publishedAt = $existing['published_at'];
+      if ($status === 'published' && empty($publishedAt)) $publishedAt = $now;
+      if ($status === 'draft') $publishedAt = null;
+
+      $u = $pdoPosts->prepare('UPDATE posts SET slug=:slug,title=:title,meta_description=:meta,excerpt=:excerpt,content_html=:content,cover_image=:cover,tags=:tags,status=:status,published_at=:published_at,updated_at=:updated_at WHERE id=:id');
+      $u->execute([
+        ':slug'=>$slug, ':title'=>$title, ':meta'=>utf8_cut($meta,160), ':excerpt'=>$excerpt,
+        ':content'=>$content, ':cover'=>$coverImage, ':tags'=>$tags !== '' ? $tags : null,
+        ':status'=>$status, ':published_at'=>$publishedAt, ':updated_at'=>$now, ':id'=>$postId,
+      ]);
     } else {
-      $found = false;
-      foreach ($items as &$a) {
-        if (($a['id'] ?? '') === $id) {
-          $a['title'] = $title;
-          $a['slug'] = $slug;
-          $a['excerpt'] = $excerpt;
-          $a['content'] = $content;
-          $a['is_published'] = $is_published;
-          $a['updated_at'] = gmdate('c');
-          $found = true;
-          break;
-        }
-      }
-      unset($a);
-      if (!$found) {
-        $article_flash = 'Не намерих статията за редакция.';
-      }
+      $publishedAt = $status === 'published' ? $now : null;
+      $i = $pdoPosts->prepare('INSERT INTO posts (slug,title,meta_description,excerpt,content_html,cover_image,tags,status,published_at,created_at,updated_at) VALUES (:slug,:title,:meta,:excerpt,:content,:cover,:tags,:status,:published_at,:created_at,:updated_at)');
+      $i->execute([
+        ':slug'=>$slug, ':title'=>$title, ':meta'=>utf8_cut($meta,160), ':excerpt'=>$excerpt,
+        ':content'=>$content, ':cover'=>$coverImage, ':tags'=>$tags !== '' ? $tags : null,
+        ':status'=>$status, ':published_at'=>$publishedAt, ':created_at'=>$now, ':updated_at'=>$now,
+      ]);
     }
 
-    if (!save_articles_json($ARTICLES_FILE, $items)) {
-      $article_flash = 'Грешка: не мога да запиша articles.json (права на файла).';
-    }
+    header('Location: admin-83xk2.php?tab=articles');
+    exit;
+  } catch (Throwable $e) {
+    $article_flash = $e->getMessage();
+  }
+}
 
-    if ($article_flash === '') {
-      header('Location: admin-83xk2.php?tab=articles');
-      exit;
+
+if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), ['article_publish', 'article_unpublish'], true)) {
+  if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
+    http_response_code(400);
+    exit('Bad CSRF');
+  }
+  try {
+    $postId = (int)($_POST['id'] ?? 0);
+    if ($postId > 0) {
+      $pdoPosts = posts_db();
+      if (($_POST['action'] ?? '') === 'article_publish') {
+        $st = $pdoPosts->prepare("UPDATE posts SET status='published', published_at=COALESCE(published_at,:now), updated_at=:now WHERE id=:id");
+      } else {
+        $st = $pdoPosts->prepare("UPDATE posts SET status='draft', updated_at=:now WHERE id=:id");
+      }
+      $now = date('Y-m-d H:i:s');
+      $st->execute([':id'=>$postId, ':now'=>$now]);
     }
+    header('Location: admin-83xk2.php?tab=articles');
+    exit;
+  } catch (Throwable $e) {
+    $article_flash = $e->getMessage();
   }
 }
 
 if (is_admin() && isset($_GET['article_delete'])) {
-  $id = trim((string)$_GET['article_delete']);
-  $items = array_values(array_filter(load_articles_json($ARTICLES_FILE), fn($a) => (($a['id'] ?? '') !== $id)));
-  save_articles_json($ARTICLES_FILE, $items);
-  header('Location: admin-83xk2.php?tab=articles');
-  exit;
-}
-
-if (is_admin() && isset($_GET['article_edit'])) {
-  $id = trim((string)$_GET['article_edit']);
-  foreach (load_articles_json($ARTICLES_FILE) as $a) {
-    if (($a['id'] ?? '') === $id) {
-      $article_edit = $a;
-      break;
+  try {
+    $id = (int)$_GET['article_delete'];
+    if ($id > 0) {
+      $pdoPosts = posts_db();
+      $d = $pdoPosts->prepare('DELETE FROM posts WHERE id=:id');
+      $d->execute([':id' => $id]);
     }
+    header('Location: admin-83xk2.php?tab=articles');
+    exit;
+  } catch (Throwable $e) {
+    $article_flash = $e->getMessage();
   }
 }
 
-$articles = is_admin() ? load_articles_json($ARTICLES_FILE) : [];
-usort($articles, fn($a, $b) => strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? '')));
+if (is_admin() && isset($_GET['article_edit'])) {
+  try {
+    $id = (int)$_GET['article_edit'];
+    if ($id > 0) {
+      $pdoPosts = posts_db();
+      $s = $pdoPosts->prepare('SELECT * FROM posts WHERE id=:id LIMIT 1');
+      $s->execute([':id' => $id]);
+      $article_edit = $s->fetch() ?: null;
+    }
+  } catch (Throwable $e) {
+    $article_flash = $e->getMessage();
+  }
+}
+
+try {
+  $articles = is_admin() ? posts_db()->query('SELECT * FROM posts ORDER BY created_at DESC')->fetchAll() : [];
+} catch (Throwable $e) {
+  $articles = [];
+  if ($article_flash === '') {
+    $article_flash = $e->getMessage();
+  }
+}
 
 /** ---------------- Data for view ---------------- */
+
 
 $pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY datetime(created_at) DESC")->fetchAll();
 
@@ -570,29 +633,40 @@ $msg = (string)($_GET['msg'] ?? '');
     <div class="card" style="padding:16px;margin:16px 0;">
       <h3 style="margin-top:0;"><?= $article_edit ? 'Редакция на статия' : 'Нова статия' ?></h3>
 
-      <form method="post">
+      <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="action" value="article_save">
         <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
         <input type="hidden" name="id" value="<?= h($article_edit['id'] ?? '') ?>">
 
         <label>Заглавие *</label>
-        <input name="title" required value="<?= h($article_edit['title'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="article-title" name="title" required value="<?= h($article_edit['title'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
 
-        <label>Slug (по желание)</label>
-        <input name="slug" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <label>Slug (автоматично, може да редактираш)</label>
+        <input id="article-slug" name="slug" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+
+        <label>Meta description (до 160 символа)</label>
+        <input name="meta_description" maxlength="160" value="<?= h($article_edit['meta_description'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
 
         <label>Кратко описание</label>
         <textarea name="excerpt" rows="3" style="width:100%;margin:6px 0 12px;"><?= h($article_edit['excerpt'] ?? '') ?></textarea>
 
-        <label>Съдържание *</label>
-        <textarea name="content" rows="10" required style="width:100%;margin:6px 0 12px;"><?= h($article_edit['content'] ?? '') ?></textarea>
+        <label>Тагове (разделени със запетая)</label>
+        <input name="tags" value="<?= h($article_edit['tags'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
 
-        <label style="display:flex;gap:8px;align-items:center;margin:10px 0;">
-          <input type="checkbox" name="is_published" value="1" <?= !isset($article_edit) || !empty($article_edit['is_published']) ? 'checked' : '' ?>>
-          Публикувана
-        </label>
+        <label>Cover image</label>
+        <input type="file" name="cover_image" accept="image/*" style="width:100%;margin:6px 0 12px;">
+        <?php if (!empty($article_edit['cover_image'])): ?><p class="muted">Текущо: <code><?= h($article_edit['cover_image']) ?></code></p><?php endif; ?>
 
-        <button type="submit" class="btn" style="margin-right:8px;"><?= $article_edit ? 'Запази' : 'Публикувай' ?></button>
+        <label>Съдържание (HTML) *</label>
+        <textarea name="content_html" rows="12" required style="width:100%;margin:6px 0 12px;"><?= h($article_edit['content_html'] ?? '') ?></textarea>
+
+        <label>Статус</label>
+        <select name="status" style="width:100%;margin:6px 0 12px;">
+          <option value="draft" <?= (($article_edit['status'] ?? 'draft') === 'draft') ? 'selected' : '' ?>>Draft</option>
+          <option value="published" <?= (($article_edit['status'] ?? '') === 'published') ? 'selected' : '' ?>>Published</option>
+        </select>
+
+        <button type="submit" class="btn" style="margin-right:8px;"><?= $article_edit ? 'Запази' : 'Създай' ?></button>
         <?php if ($article_edit): ?>
           <a class="btn btn-ghost" href="admin-83xk2.php?tab=articles">Откажи</a>
         <?php endif; ?>
@@ -607,22 +681,47 @@ $msg = (string)($_GET['msg'] ?? '');
           <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
             <strong><?= h($a['title'] ?? '') ?></strong>
             <span style="opacity:.8;">
-              <?= !empty($a['is_published']) ? 'Публикувана' : 'Скрита' ?>
+              <?= (($a['status'] ?? 'draft') === 'published') ? 'Публикувана' : 'Чернова' ?>
               • <?= h(isset($a['created_at']) ? date('d.m.Y H:i', strtotime($a['created_at'])) : '') ?>
             </span>
           </div>
           <div style="opacity:.85;margin-top:6px;">
             Slug: <code><?= h($a['slug'] ?? '') ?></code>
           </div>
-          <div style="margin-top:10px;display:flex;gap:8px;">
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
             <a class="btn" href="admin-83xk2.php?tab=articles&article_edit=<?= h($a['id'] ?? '') ?>">Редактирай</a>
             <a class="btn danger" href="admin-83xk2.php?tab=articles&article_delete=<?= h($a['id'] ?? '') ?>"
                onclick="return confirm('Да изтрия ли статията?')">Изтрий</a>
+            <?php if (($a['status'] ?? 'draft') === 'published'): ?>
+              <form method="post" action="admin-83xk2.php?tab=articles">
+                <input type="hidden" name="action" value="article_unpublish"><input type="hidden" name="id" value="<?= (int)$a['id'] ?>"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><button type="submit" class="btn btn-ghost">Unpublish</button>
+              </form>
+            <?php else: ?>
+              <form method="post" action="admin-83xk2.php?tab=articles">
+                <input type="hidden" name="action" value="article_publish"><input type="hidden" name="id" value="<?= (int)$a['id'] ?>"><input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>"><button type="submit" class="btn">Publish</button>
+              </form>
+            <?php endif; ?>
           </div>
         </div>
       <?php endforeach; ?>
     </div>
   <?php endif; ?>
 </div>
+
+<script>
+(function(){
+  const title=document.getElementById('article-title');
+  const slug=document.getElementById('article-slug');
+  if(!title||!slug) return;
+  function toSlug(v){
+    const map={'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'sht','ъ':'a','ь':'','ю':'yu','я':'ya'};
+    v=v.toLowerCase().trim().replace(/[а-я]/g,ch=>map[ch]||ch);
+    return v.replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  }
+  title.addEventListener('input',()=>{ if(!slug.dataset.touched){ slug.value=toSlug(title.value);} });
+  slug.addEventListener('input',()=>slug.dataset.touched='1');
+})();
+</script>
+
 </body>
 </html>
