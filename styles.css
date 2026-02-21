@@ -751,3 +751,134 @@ footer {
 .muted {
   color: var(--muted);
 }
+
+.blog-page {
+  max-width: 1120px;
+  margin: 80px auto 40px;
+  padding: 0 16px;
+}
+
+.blog-head p {
+  color: var(--muted);
+  margin: 8px 0 18px;
+}
+
+.blog-search {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.blog-search input {
+  flex: 1 1 280px;
+  border: 1px solid #d9e1ef;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+}
+
+.blog-search button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+  margin-top: 28px;
+}
+
+.blog-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 72, 153, 0.12);
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+  transition: transform .25s ease, box-shadow .25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+}
+
+.blog-card h2 {
+  font-size: 1.2rem;
+  margin: 8px 0;
+}
+
+.blog-card h2 a {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.blog-meta {
+  font-size: 14px;
+  color: #7b879f;
+}
+
+.blog-read-more {
+  margin-top: auto;
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.blog-pagination {
+  margin-top: 26px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.blog-pagination a {
+  min-width: 38px;
+  text-align: center;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid #d9e1ef;
+  color: var(--text);
+  background: #fff;
+}
+
+.blog-pagination a.active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+.blog-article {
+  max-width: 880px;
+  margin: 80px auto 40px;
+  padding: 0 16px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.blog-lead {
+  color: #3a4d72;
+  font-size: 1.05rem;
+}
+
+.blog-content {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(34, 72, 153, 0.12);
+  padding: 24px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
