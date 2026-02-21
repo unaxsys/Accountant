@@ -967,13 +967,6 @@ footer {
   max-width: 1400px;
   margin: 0 0 40px 0;
 }
-.blog-article h1,
-.blog-layout--article h1 {
-  max-width: none !important;
-  width: 100%;
-  font-size: clamp(2rem, 4vw, 3.2rem);
-  line-height: 1.12;
-}
 
 .blog-article {
   max-width: 1120px;
