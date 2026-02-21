@@ -10,28 +10,6 @@ const mobileDrawer = document.getElementById('mobile-drawer');
 const drawerBackdrop = document.getElementById('drawer-backdrop');
 const drawerLinks = document.querySelectorAll('.drawer-nav a');
 const faqItems = document.querySelectorAll('.faq-item');
-const testimonialText = document.getElementById('testimonial-text');
-const testimonialAuthor = document.getElementById('testimonial-author');
-const testimonialPrev = document.getElementById('testimonial-prev');
-const testimonialNext = document.getElementById('testimonial-next');
-
-const testimonials = [
-  {
-    text: '"Откакто работим с Магос ЕООД, отчетите ни са винаги навреме, а комуникацията е ясна и бърза."',
-    author: 'Христо Иванов — Управител'
-  },
-  {
-    text: '"Прехвърлихме изцяло ТРЗ и счетоводството към екипа и спестихме часове административна работа месечно."',
-    author: 'Петко Тодоров — Собственик, онлайн бизнес'
-  },
-  {
-    text: '"При проверка от институции получихме пълно съдействие и отлично подготвена документация."',
-    author: 'Алекси Георгиев — Финансов мениджър'
-  }
-];
-
-let testimonialIndex = 0;
-
 function formatIsoDateToBg(isoDate) {
   if (!isoDate || typeof isoDate !== 'string') {
     return '';
@@ -145,70 +123,91 @@ faqItems.forEach((item) => {
   });
 });
 
-function renderTestimonial() {
-  if (!testimonialText || !testimonialAuthor) {
+const PHP_BASE = "http://46.183.117.128:8791";
+
+async function loadApprovedReviews(limit = 12) {
+  const response = await fetch(`${PHP_BASE}/reviews.php?limit=${encodeURIComponent(limit)}`, {
+    method: 'GET',
+    cache: 'no-store'
+  });
+  const data = await response.json().catch(() => null);
+  if (!response.ok || !data || !data.ok) {
+    throw new Error('Failed to load reviews');
+  }
+
+  return Array.isArray(data.reviews) ? data.reviews : [];
+}
+
+function renderTestimonialsSlider(reviews) {
+  const track = document.getElementById('testimonialsTrack');
+  if (!track) {
     return;
   }
 
-  testimonialText.textContent = testimonials[testimonialIndex].text;
-  testimonialAuthor.textContent = testimonials[testimonialIndex].author;
-}
-
-if (testimonialPrev) {
-  testimonialPrev.addEventListener('click', () => {
-    testimonialIndex = (testimonialIndex - 1 + testimonials.length) % testimonials.length;
-    renderTestimonial();
-  });
-}
-
-if (testimonialNext) {
-  testimonialNext.addEventListener('click', () => {
-    testimonialIndex = (testimonialIndex + 1) % testimonials.length;
-    renderTestimonial();
-  });
-}
-
-if (testimonialText && testimonialAuthor) {
-  renderTestimonial();
-}
-
-const PHP_BASE = "http://46.183.117.128:8791";
-
-async function loadApprovedReviews() {
-  const box = document.getElementById("reviewsList");
-  if (!box) return;
-
-  try {
-    const res = await fetch(`${PHP_BASE}/reviews.php?limit=50`, { cache: "no-store" });
-    const json = await res.json();
-    if (!json.ok) throw new Error("Failed");
-
-    const items = json.reviews || [];
-    if (!items.length) {
-      box.innerHTML = "<p>Все още няма публикувани отзиви.</p>";
-      return;
-    }
-
-    box.innerHTML = items
-      .map(r => {
-        const stars = "★".repeat(r.rating) + "☆".repeat(5 - r.rating);
-        const name = escapeHtml(r.name || "");
-        const company = r.company ? ` — ${escapeHtml(r.company)}` : "";
-        const msg = escapeHtml(r.message || "");
-        return `
-          <div class="review-card">
-            <div class="review-meta">
-              <div class="review-name">${name}${company}</div>
-              <div class="review-stars">${stars}</div>
-            </div>
-            <div class="review-text">${msg}</div>
-          </div>
-        `;
-      })
-      .join("");
-  } catch (e) {
-    box.innerHTML = "<p>Не успяхме да заредим отзивите. Опитайте по-късно.</p>";
+  if (!reviews.length) {
+    track.innerHTML = '<div class="testimonial-card"><p class="muted">Все още няма отзиви.</p></div>';
+    return;
   }
+
+  track.innerHTML = reviews
+    .map((review, index) => {
+      const rating = Math.max(0, Math.min(5, Number(review.rating) || 0));
+      const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+      return `
+        <div class="testimonial-slide" data-index="${index}">
+          <div class="testimonial-card">
+            <p class="testimonial-text">&ldquo;${escapeHtml(review.message || '')}&rdquo;</p>
+            <div class="testimonial-meta">
+              <span class="testimonial-name">${escapeHtml(review.name || 'Анонимен клиент')}</span>
+              <span class="testimonial-stars" aria-label="Оценка ${rating} от 5">${stars}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    })
+    .join('');
+
+  const slides = Array.from(track.querySelectorAll('.testimonial-slide'));
+  const prevBtn = document.getElementById('testPrev');
+  const nextBtn = document.getElementById('testNext');
+  if (!slides.length) {
+    return;
+  }
+
+  let index = 0;
+  let timer = null;
+
+  const show = (targetIndex) => {
+    index = (targetIndex + slides.length) % slides.length;
+    slides.forEach((slide, slideIndex) => {
+      slide.classList.toggle('is-active', slideIndex === index);
+    });
+  };
+
+  const startTimer = () => {
+    timer = setInterval(() => show(index + 1), 6000);
+  };
+
+  const stopTimer = () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  };
+
+  prevBtn?.addEventListener('click', () => show(index - 1));
+  nextBtn?.addEventListener('click', () => show(index + 1));
+
+  const sliderRoot = track.closest('.testimonial-slider') || track;
+  sliderRoot.addEventListener('mouseenter', stopTimer);
+  sliderRoot.addEventListener('mouseleave', () => {
+    if (!timer) {
+      startTimer();
+    }
+  });
+
+  show(0);
+  startTimer();
 }
 
 function escapeHtml(str) {
@@ -242,5 +241,43 @@ async function wireReviewForm() {
   });
 }
 
-loadApprovedReviews();
+(async function initTestimonials() {
+  try {
+    const reviews = await loadApprovedReviews(12);
+    reviews.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
+    renderTestimonialsSlider(reviews.slice(0, 8));
+  } catch (error) {
+    const track = document.getElementById('testimonialsTrack');
+    if (track) {
+      track.innerHTML = '<div class="testimonial-card"><p class="muted">Не успяхме да заредим отзивите.</p></div>';
+    }
+  }
+})();
+
+(function initReviewFormToggle() {
+  const button = document.getElementById('toggleReviewForm');
+  const wrap = document.getElementById('reviewFormWrap');
+  if (!button || !wrap) {
+    return;
+  }
+
+  const setOpen = (open) => {
+    wrap.classList.toggle('is-collapsed', !open);
+    button.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+    if (open) {
+      setTimeout(() => {
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  };
+
+  button.addEventListener('click', () => {
+    const open = button.getAttribute('aria-expanded') !== 'true';
+    setOpen(open);
+  });
+
+  setOpen(false);
+})();
+
 wireReviewForm();
