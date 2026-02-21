@@ -59,7 +59,7 @@ function slugify_bg(string $text): string {
   $text = trim(mb_strtolower($text, 'UTF-8'));
   $map = ['а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ж'=>'zh','з'=>'z','и'=>'i','й'=>'y',
           'к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u',
-          'ф'=>'f','х'=>'h','ц'=>'ts','ч'=>'ch','ш'=>'sh','щ'=>'sht','ъ'=>'a','ь'=>'y','ю'=>'yu','я'=>'ya'];
+          'ф'=>'f','х'=>'h','ц'=>'ts','ч'=>'ch','ш'=>'sh','щ'=>'sht','ъ'=>'a','ь'=>'','ю'=>'yu','я'=>'ya'];
   $text = strtr($text, $map);
   $text = preg_replace('/[^a-z0-9]+/u', '-', $text);
   $text = trim((string)$text, '-');
@@ -68,7 +68,7 @@ function slugify_bg(string $text): string {
 
 function unique_slug_json(array $items, string $base, ?string $ignoreId = null): string {
   $slug = $base;
-  $i = 2;
+  $i = 1;
   $exists = function ($s) use ($items, $ignoreId) {
     foreach ($items as $a) {
       if (($a['slug'] ?? '') === $s && (!$ignoreId || ($a['id'] ?? '') !== $ignoreId)) return true;
