@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../posts_lib.php';
+require_once __DIR__ . '/../includes/db.php';
 
 function h($s): string {
   return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -12,7 +12,7 @@ $articles = [];
 $total = 0;
 
 try {
-  $pdo = posts_db();
+  $pdo = posts_pdo(true);
   $where = "status = 'published'";
   $params = [];
 
