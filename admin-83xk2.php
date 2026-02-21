@@ -5,6 +5,11 @@ require_once __DIR__ . '/config.php';
 
 session_start();
 
+$tab = (string)($_GET['tab'] ?? 'reviews');
+if (!in_array($tab, ['reviews', 'articles'], true)) {
+  $tab = 'reviews';
+}
+
 /** ---------------- Helpers ---------------- */
 
 function csrf_token(): string {
@@ -34,6 +39,47 @@ function require_csrf_or_400(): void {
 
 function h($s): string {
   return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
+$ARTICLES_FILE = __DIR__ . '/articles.json';
+
+function load_articles_json(string $file): array {
+  if (!file_exists($file)) return [];
+  $raw = file_get_contents($file);
+  $data = json_decode($raw, true);
+  return is_array($data) ? $data : [];
+}
+
+function save_articles_json(string $file, array $items): bool {
+  $json = json_encode($items, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  return file_put_contents($file, $json, LOCK_EX) !== false;
+}
+
+function slugify_bg(string $text): string {
+  $text = trim(mb_strtolower($text, 'UTF-8'));
+  $map = ['а'=>'a','б'=>'b','в'=>'v','г'=>'g','д'=>'d','е'=>'e','ж'=>'zh','з'=>'z','и'=>'i','й'=>'y',
+          'к'=>'k','л'=>'l','м'=>'m','н'=>'n','о'=>'o','п'=>'p','р'=>'r','с'=>'s','т'=>'t','у'=>'u',
+          'ф'=>'f','х'=>'h','ц'=>'ts','ч'=>'ch','ш'=>'sh','щ'=>'sht','ъ'=>'a','ь'=>'y','ю'=>'yu','я'=>'ya'];
+  $text = strtr($text, $map);
+  $text = preg_replace('/[^a-z0-9]+/u', '-', $text);
+  $text = trim((string)$text, '-');
+  return $text ?: 'statia';
+}
+
+function unique_slug_json(array $items, string $base, ?string $ignoreId = null): string {
+  $slug = $base;
+  $i = 2;
+  $exists = function ($s) use ($items, $ignoreId) {
+    foreach ($items as $a) {
+      if (($a['slug'] ?? '') === $s && (!$ignoreId || ($a['id'] ?? '') !== $ignoreId)) return true;
+    }
+    return false;
+  };
+  while ($exists($slug)) {
+    $slug = $base . '-' . $i;
+    $i++;
+  }
+  return $slug;
 }
 
 /**
@@ -208,6 +254,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 }
 
+$article_flash = '';
+$article_edit = null;
+
+if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'article_save')) {
+  if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
+    http_response_code(400);
+    exit('Bad CSRF');
+  }
+
+  $id = trim((string)($_POST['id'] ?? ''));
+  $title = trim((string)($_POST['title'] ?? ''));
+  $slugIn = trim((string)($_POST['slug'] ?? ''));
+  $excerpt = trim((string)($_POST['excerpt'] ?? ''));
+  $content = trim((string)($_POST['content'] ?? ''));
+  $is_published = !empty($_POST['is_published']) ? 1 : 0;
+
+  if ($title === '' || $content === '') {
+    $article_flash = 'Заглавие и съдържание са задължителни.';
+  } else {
+    $items = load_articles_json($ARTICLES_FILE);
+    $base = slugify_bg($slugIn !== '' ? $slugIn : $title);
+    $slug = unique_slug_json($items, $base, $id !== '' ? $id : null);
+
+    if ($id === '') {
+      $id = bin2hex(random_bytes(8));
+      $items[] = [
+        'id' => $id,
+        'title' => $title,
+        'slug' => $slug,
+        'excerpt' => $excerpt,
+        'content' => $content,
+        'is_published' => $is_published,
+        'created_at' => gmdate('c'),
+        'updated_at' => gmdate('c'),
+      ];
+    } else {
+      $found = false;
+      foreach ($items as &$a) {
+        if (($a['id'] ?? '') === $id) {
+          $a['title'] = $title;
+          $a['slug'] = $slug;
+          $a['excerpt'] = $excerpt;
+          $a['content'] = $content;
+          $a['is_published'] = $is_published;
+          $a['updated_at'] = gmdate('c');
+          $found = true;
+          break;
+        }
+      }
+      unset($a);
+      if (!$found) {
+        $article_flash = 'Не намерих статията за редакция.';
+      }
+    }
+
+    if (!save_articles_json($ARTICLES_FILE, $items)) {
+      $article_flash = 'Грешка: не мога да запиша articles.json (права на файла).';
+    }
+
+    if ($article_flash === '') {
+      header('Location: admin-83xk2.php?tab=articles');
+      exit;
+    }
+  }
+}
+
+if (is_admin() && isset($_GET['article_delete'])) {
+  $id = trim((string)$_GET['article_delete']);
+  $items = array_values(array_filter(load_articles_json($ARTICLES_FILE), fn($a) => (($a['id'] ?? '') !== $id)));
+  save_articles_json($ARTICLES_FILE, $items);
+  header('Location: admin-83xk2.php?tab=articles');
+  exit;
+}
+
+if (is_admin() && isset($_GET['article_edit'])) {
+  $id = trim((string)$_GET['article_edit']);
+  foreach (load_articles_json($ARTICLES_FILE) as $a) {
+    if (($a['id'] ?? '') === $id) {
+      $article_edit = $a;
+      break;
+    }
+  }
+}
+
+$articles = is_admin() ? load_articles_json($ARTICLES_FILE) : [];
+usort($articles, fn($a, $b) => strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? '')));
+
 /** ---------------- Data for view ---------------- */
 
 $pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY datetime(created_at) DESC")->fetchAll();
@@ -266,6 +399,10 @@ $msg = (string)($_GET['msg'] ?? '');
     .muted{color:#667;font-size:12px}
     .toplinks{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
     .cancel{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:10px 12px;border-radius:10px;border:1px solid #d9e1ef;background:#fff;color:#2f6fed;font-weight:800;text-decoration:none}
+    .btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 12px;border-radius:10px;background:#2f6fed;color:#fff;font-weight:800;text-decoration:none;border:0}
+    .btn-ghost{background:#fff;color:#2f6fed;border:1px solid #d9e1ef}
+    .danger{background:#e24343;color:#fff}
+    .notice{background:#fff4e5;border:1px solid #ffce8a;color:#8a4b00;padding:10px 12px;border-radius:10px}
   </style>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
@@ -281,8 +418,9 @@ $msg = (string)($_GET['msg'] ?? '');
 <header>
   <div class="badge">Admin: Отзиви</div>
   <div class="toplinks">
-    <a href="#pending">Чакащи (<?= count($pending) ?>)</a>
-    <a href="#approved">Одобрени (<?= count($approved) ?>)</a>
+    <a href="admin-83xk2.php?tab=reviews#pending">Чакащи (<?= count($pending) ?>)</a>
+    <a href="admin-83xk2.php?tab=reviews#approved">Одобрени (<?= count($approved) ?>)</a>
+    <a href="admin-83xk2.php?tab=articles">Статии</a>
     <a href="?logout=1">Изход</a>
   </div>
 </header>
@@ -292,6 +430,7 @@ $msg = (string)($_GET['msg'] ?? '');
 <?php endif; ?>
 
 <div class="wrap">
+  <?php if ($tab === 'reviews'): ?>
   <h2 id="pending">Чакащи одобрение (<?= count($pending) ?>)</h2>
   <div class="grid">
     <?php if (!count($pending)): ?>
@@ -419,6 +558,71 @@ $msg = (string)($_GET['msg'] ?? '');
       </div>
     <?php endforeach; ?>
   </div>
+  <?php endif; ?>
+
+  <?php if ($tab === 'articles'): ?>
+    <h2>Статии</h2>
+
+    <?php if (!empty($article_flash)): ?>
+      <div class="notice"><?= h($article_flash) ?></div>
+    <?php endif; ?>
+
+    <div class="card" style="padding:16px;margin:16px 0;">
+      <h3 style="margin-top:0;"><?= $article_edit ? 'Редакция на статия' : 'Нова статия' ?></h3>
+
+      <form method="post">
+        <input type="hidden" name="action" value="article_save">
+        <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+        <input type="hidden" name="id" value="<?= h($article_edit['id'] ?? '') ?>">
+
+        <label>Заглавие *</label>
+        <input name="title" required value="<?= h($article_edit['title'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+
+        <label>Slug (по желание)</label>
+        <input name="slug" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+
+        <label>Кратко описание</label>
+        <textarea name="excerpt" rows="3" style="width:100%;margin:6px 0 12px;"><?= h($article_edit['excerpt'] ?? '') ?></textarea>
+
+        <label>Съдържание *</label>
+        <textarea name="content" rows="10" required style="width:100%;margin:6px 0 12px;"><?= h($article_edit['content'] ?? '') ?></textarea>
+
+        <label style="display:flex;gap:8px;align-items:center;margin:10px 0;">
+          <input type="checkbox" name="is_published" value="1" <?= !isset($article_edit) || !empty($article_edit['is_published']) ? 'checked' : '' ?>>
+          Публикувана
+        </label>
+
+        <button type="submit" class="btn" style="margin-right:8px;"><?= $article_edit ? 'Запази' : 'Публикувай' ?></button>
+        <?php if ($article_edit): ?>
+          <a class="btn btn-ghost" href="admin-83xk2.php?tab=articles">Откажи</a>
+        <?php endif; ?>
+      </form>
+    </div>
+
+    <div class="card" style="padding:16px;">
+      <h3 style="margin-top:0;">Списък</h3>
+
+      <?php foreach ($articles as $a): ?>
+        <div style="border:1px solid #e6e6e6;border-radius:12px;padding:12px;margin:10px 0;">
+          <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <strong><?= h($a['title'] ?? '') ?></strong>
+            <span style="opacity:.8;">
+              <?= !empty($a['is_published']) ? 'Публикувана' : 'Скрита' ?>
+              • <?= h(isset($a['created_at']) ? date('d.m.Y H:i', strtotime($a['created_at'])) : '') ?>
+            </span>
+          </div>
+          <div style="opacity:.85;margin-top:6px;">
+            Slug: <code><?= h($a['slug'] ?? '') ?></code>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <a class="btn" href="admin-83xk2.php?tab=articles&article_edit=<?= h($a['id'] ?? '') ?>">Редактирай</a>
+            <a class="btn danger" href="admin-83xk2.php?tab=articles&article_delete=<?= h($a['id'] ?? '') ?>"
+               onclick="return confirm('Да изтрия ли статията?')">Изтрий</a>
+          </div>
+        </div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
 </div>
 </body>
 </html>
