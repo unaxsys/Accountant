@@ -78,7 +78,28 @@
         </p>
       </section>
 
-      <section class="cards" id="articles-list" aria-live="polite"></section>
+      <section class="cards" id="articles-list" aria-live="polite">
+        <article class="card">
+          <p class="tag">15.01.2026</p>
+          <h3>ДДС регистрация: кога е задължителна и как да се подготвите без излишен риск</h3>
+          <p>Ключови прагове, практически стъпки за подготовка и най-честите грешки в първите месеци след регистрация.</p>
+          <a class="btn btn-ghost" href="/statii/dds-registracia/">Прочети</a>
+        </article>
+
+        <article class="card">
+          <p class="tag">22.01.2026</p>
+          <h3>ДДС срокове: как да подредите месечен календар, който предпазва от санкции</h3>
+          <p>Примерен месечен график, контролни точки и организация на екипа за спокойна и навременна отчетност.</p>
+          <a class="btn btn-ghost" href="/statii/dds-srokove/">Прочети</a>
+        </article>
+
+        <article class="card">
+          <p class="tag">30.01.2026</p>
+          <h3>ТРЗ грешки при малки екипи: как да намалите риска и да запазите доверието</h3>
+          <p>Най-честите пропуски в ТРЗ цикъла и практични мерки за сигурни заплати, документи и вътрешен контрол.</p>
+          <a class="btn btn-ghost" href="/statii/trz-greshki/">Прочети</a>
+        </article>
+      </section>
       <p id="articles-empty" class="subtitle" style="display:none; margin-top: 1.5rem;"></p>
     </main>
 
@@ -123,47 +144,6 @@
       <p>© <span id="year">2026</span> Магос ЕООД • Тел.: +359 893 208 961 • Всички права запазени.</p>
     </footer>
 
-    <script>
-      (async function loadArticles() {
-        const list = document.getElementById('articles-list');
-        const message = document.getElementById('articles-empty');
-
-        try {
-          const response = await fetch('/articles.json');
-          if (!response.ok) {
-            throw new Error('Неуспешно зареждане.');
-          }
-
-          const articles = await response.json();
-          if (!Array.isArray(articles) || !articles.length) {
-            message.textContent = 'Все още няма публикувани статии. Моля, посетете страницата отново скоро.';
-            message.style.display = 'block';
-            return;
-          }
-
-          const formatted = articles
-            .slice()
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .map((article) => {
-              const dateLabel = window.formatIsoDateToBg ? window.formatIsoDateToBg(article.date) : article.date;
-              return `
-                <article class="card">
-                  <p class="tag">${dateLabel}</p>
-                  <h3>${article.title}</h3>
-                  <p>${article.excerpt}</p>
-                  <a class="btn btn-ghost" href="${article.url}">Прочети</a>
-                </article>
-              `;
-            })
-            .join('');
-
-          list.innerHTML = formatted;
-        } catch (error) {
-          message.textContent = 'В момента не успяхме да заредим статиите. Моля, опитайте отново след малко.';
-          message.style.display = 'block';
-        }
-      })();
-    </script>
     <script src="/script.js"></script>
   </body>
 </html>
