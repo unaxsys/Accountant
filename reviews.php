@@ -1,4 +1,9 @@
 <?php
+header('Access-Control-Allow-Origin: http://46.183.117.128:8790');
+header('Access-Control-Allow-Methods: GET, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+
 // reviews.php
 require_once __DIR__ . '/db.php';
 
@@ -20,3 +25,4 @@ $rows = $stmt->fetchAll();
 
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode(['ok' => true, 'reviews' => $rows], JSON_UNESCAPED_UNICODE);
+<?php
