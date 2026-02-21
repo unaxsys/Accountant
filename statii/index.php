@@ -1,61 +1,47 @@
 <?php
-$DATA_FILE = __DIR__ . '/../articles.json';
+require_once __DIR__ . '/../posts_lib.php';
 
 function h($s): string {
   return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function article_ts(array $article): int {
-  $raw = $article['created_at'] ?? $article['date'] ?? null;
-  if (is_int($raw) || (is_string($raw) && ctype_digit($raw))) {
-    return (int)$raw;
-  }
-  if (is_string($raw) && $raw !== '') {
-    $parsed = strtotime($raw);
-    if ($parsed !== false) return $parsed;
-  }
-  return 0;
-}
-
-function article_published(array $article): bool {
-  if (array_key_exists('published', $article)) return !empty($article['published']);
-  if (array_key_exists('is_published', $article)) return !empty($article['is_published']);
-  return true;
-}
-
-function article_slug(array $article): string {
-  if (!empty($article['slug'])) return trim((string)$article['slug']);
-  if (!empty($article['url'])) return trim((string)basename((string)$article['url']), '/');
-  return '';
-}
-
-function article_href(array $article): string {
-  $slug = article_slug($article);
-  if ($slug !== '') {
-    return '/statii/' . rawurlencode($slug);
-  }
-  return (string)($article['url'] ?? '/statii/');
-}
-
-$raw = file_exists($DATA_FILE) ? file_get_contents($DATA_FILE) : '[]';
-$articles = json_decode($raw, true);
-$articles = is_array($articles) ? $articles : [];
-$articles = array_values(array_filter($articles, fn($a) => is_array($a) && article_published($a)));
-usort($articles, fn($a, $b) => article_ts($b) <=> article_ts($a));
-
 $q = trim((string)($_GET['q'] ?? ''));
-if ($q !== '') {
-  $articles = array_values(array_filter($articles, fn($a) =>
-    stripos((string)($a['title'] ?? ''), $q) !== false || stripos((string)($a['excerpt'] ?? ''), $q) !== false
-  ));
-}
-
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 15;
-$total = count($articles);
-$pages = max(1, (int)ceil($total / $perPage));
-if ($page > $pages) $page = $pages;
-$articles = array_slice($articles, ($page - 1) * $perPage, $perPage);
+$articles = [];
+$total = 0;
+
+try {
+  $pdo = posts_db();
+  $where = "status = 'published'";
+  $params = [];
+
+  if ($q !== '') {
+    $where .= ' AND (title LIKE :q OR excerpt LIKE :q)';
+    $params[':q'] = '%' . $q . '%';
+  }
+
+  $countStmt = $pdo->prepare("SELECT COUNT(*) FROM posts WHERE {$where}");
+  $countStmt->execute($params);
+  $total = (int)$countStmt->fetchColumn();
+
+  $pages = max(1, (int)ceil($total / $perPage));
+  if ($page > $pages) $page = $pages;
+
+  $sql = "SELECT * FROM posts WHERE {$where} ORDER BY published_at DESC, id DESC LIMIT :limit OFFSET :offset";
+  $stmt = $pdo->prepare($sql);
+  foreach ($params as $k => $v) {
+    $stmt->bindValue($k, $v, PDO::PARAM_STR);
+  }
+  $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+  $stmt->bindValue(':offset', ($page - 1) * $perPage, PDO::PARAM_INT);
+  $stmt->execute();
+  $articles = $stmt->fetchAll();
+} catch (Throwable $e) {
+  $pages = 1;
+}
+
+$pages = $pages ?? 1;
 ?>
 <!doctype html>
 <html lang="bg">
@@ -171,10 +157,10 @@ $articles = array_slice($articles, ($page - 1) * $perPage, $perPage);
         <?php endif; ?>
 
         <?php foreach ($articles as $a): ?>
-          <?php $href = article_href($a); ?>
+          <?php $href = '/statii/' . rawurlencode((string)$a['slug']); ?>
           <article class="card service-card">
             <div>
-              <p class="tag"><?= h(date('d.m.Y', article_ts($a) ?: time())) ?></p>
+              <p class="tag"><?= h(date('d.m.Y', strtotime((string)($a['published_at'] ?? $a['created_at'] ?? 'now')) ?: time())) ?></p>
               <h3><?= h($a['title'] ?? '') ?></h3>
               <p><?= h(($a['excerpt'] ?? '') ?: 'Прочетете статията за повече подробности.') ?></p>
               <div class="hero-actions" style="justify-content:flex-start; gap:12px; margin-top:10px;">
