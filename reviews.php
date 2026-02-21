@@ -25,4 +25,4 @@ $rows = $stmt->fetchAll();
 
 header('Content-Type: application/json; charset=utf-8');
 echo json_encode(['ok' => true, 'reviews' => $rows], JSON_UNESCAPED_UNICODE);
-<?php
+
