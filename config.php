@@ -16,3 +16,4 @@ define('NOTIFY_EMAIL', 'office@magos.bg');
 
 // Базов сайт URL (по желание)
 define('SITE_NAME', 'Магос ЕООД');
+//
