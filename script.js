@@ -172,12 +172,14 @@ if (testimonialText && testimonialAuthor) {
   renderTestimonial();
 }
 
+const PHP_BASE = "http://46.183.117.128:8791";
+
 async function loadApprovedReviews() {
   const box = document.getElementById("reviewsList");
   if (!box) return;
 
   try {
-    const res = await fetch("/reviews.php?limit=50", { cache: "no-store" });
+    const res = await fetch(`${PHP_BASE}/reviews.php?limit=50`, { cache: "no-store" });
     const json = await res.json();
     if (!json.ok) throw new Error("Failed");
 
@@ -226,7 +228,7 @@ async function wireReviewForm() {
 
     const fd = new FormData(form);
     try {
-      const res = await fetch("/submit-review.php", { method: "POST", body: fd });
+      const res = await fetch(`${PHP_BASE}/submit-review.php`, { method: "POST", body: fd });
       const json = await res.json();
       if (!json.ok) throw new Error(json.message || "Грешка");
 
