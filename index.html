@@ -246,6 +246,59 @@
           </article>
         </div>
       </section>      
+
+      <section class="reviews" id="reviews">
+        <h2>Отзиви от клиенти</h2>
+
+        <div id="reviewsList" class="reviews-list">
+          <p>Зареждане на отзиви…</p>
+        </div>
+
+        <div class="review-form-wrap">
+          <h3>Оставете отзив</h3>
+          <form id="reviewForm" class="review-form">
+            <!-- Honeypot (скрито) -->
+            <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off" />
+
+            <div class="row">
+              <label>Име и фамилия *</label>
+              <input name="name" required />
+            </div>
+
+            <div class="row">
+              <label>Фирма (по желание)</label>
+              <input name="company" />
+            </div>
+
+            <div class="row">
+              <label>Имейл *</label>
+              <input name="email" type="email" required />
+            </div>
+
+            <div class="row">
+              <label>Оценка *</label>
+              <select name="rating" required>
+                <option value="">Изберете</option>
+                <option value="5">5 – Отлично</option>
+                <option value="4">4 – Много добро</option>
+                <option value="3">3 – Добро</option>
+                <option value="2">2 – Средно</option>
+                <option value="1">1 – Слабо</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label>Отзив *</label>
+              <textarea name="message" rows="5" required></textarea>
+            </div>
+
+            <button type="submit" class="btn">Изпрати</button>
+            <p id="reviewMsg" class="review-msg" aria-live="polite"></p>
+            <p class="review-note">Отзивът се публикува след одобрение.</p>
+          </form>
+        </div>
+      </section>
+
       <section class="contact" id="contact">
         <h2>Свържете се с нас</h2>
         <p>Изпратете запитване и ще получите индивидуална оферта до 24 часа.</p>
