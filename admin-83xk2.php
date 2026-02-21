@@ -145,8 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($id > 0) {
       if ($action === 'approve') {
-        $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at=:t WHERE id=:id");
-        $stmt->execute([':t' => gmdate('c'), ':id' => $id]);
+        // ✅ FIX: store SQLite-friendly timestamp so sorting/filtering is always stable
+        $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at = datetime('now') WHERE id=:id");
+        $stmt->execute([':id' => $id]);
         redirect_with_msg('approved', 'Отзивът е одобрен.');
       }
 
@@ -201,7 +202,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 /** ---------------- Data for view ---------------- */
 
 $pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY datetime(created_at) DESC")->fetchAll();
-$approved = $pdo->query("SELECT * FROM reviews WHERE status='approved' ORDER BY datetime(approved_at) DESC, datetime(created_at) DESC LIMIT 200")->fetchAll();
+
+/**
+ * ✅ FIX: Robust ordering for approved_at, even if older rows used ISO 8601 (T + timezone)
+ * We normalize approved_at to SQLite datetime format for ordering.
+ */
+$approved = $pdo->query("
+  SELECT *
+  FROM reviews
+  WHERE status='approved'
+  ORDER BY
+    COALESCE(
+      datetime(approved_at),
+      datetime(replace(replace(approved_at,'T',' '),'+00:00',''))
+    ) DESC,
+    datetime(created_at) DESC
+  LIMIT 200
+")->fetchAll();
+
 $editId = (int)($_GET['edit'] ?? 0);
 $msg = (string)($_GET['msg'] ?? '');
 ?>
