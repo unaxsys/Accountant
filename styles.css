@@ -961,3 +961,9 @@ footer {
   text-decoration: none;
   font-weight: 700;
 }
+.blog-article h1 {
+  font-size: 48px;
+  line-height: 1.15;
+  max-width: 1100px;
+  margin: 0 0 20px 0;
+}
