@@ -126,8 +126,20 @@ $coverAbs = $cover !== '' ? rtrim(SITE_URL, '/') . $cover : '';
         <div class="blog-content"><?= (string)$post['content_html'] ?></div>
       </article>
     </section>
+
+    <section class="cta-strip">
+      <p>Имате казус? Пишете ни и ще получите отговор + оферта до 24 часа.</p>
+      <a class="btn" href="/#contact">Запитване</a>
+    </section>
   </main>
 
+  <footer>
+    <p>© <span id="year">2026</span> Магос ЕООД • Тел.: +359 893 208 961 • Всички права запазени.</p>
+  </footer>
+
   <script src="/script.js"></script>
+  <script>
+    try { document.getElementById('year').textContent = new Date().getFullYear(); } catch(e) {}
+  </script>
 </body>
 </html>
