@@ -404,7 +404,7 @@ $msg = (string)($_GET['msg'] ?? '');
     .danger{background:#e24343;color:#fff}
     .notice{background:#fff4e5;border:1px solid #ffce8a;color:#8a4b00;padding:10px 12px;border-radius:10px}
   </style>
-    <!-- Google tag (gtag.js) -->
+    <!-- Google tag  (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
