@@ -790,7 +790,7 @@ footer {
 .blog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 25px;
+  gap: 55px;
   margin-top: 28px;
 }
 
