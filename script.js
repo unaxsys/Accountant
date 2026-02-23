@@ -10,6 +10,9 @@ const mobileDrawer = document.getElementById('mobile-drawer');
 const drawerBackdrop = document.getElementById('drawer-backdrop');
 const drawerLinks = document.querySelectorAll('.drawer-nav a');
 const faqItems = document.querySelectorAll('.faq-item');
+
+const ORIGIN = window.location.origin;
+const apiUrl = (path) => `${ORIGIN}${path.startsWith('/') ? '' : '/'}${path}`;
 function formatIsoDateToBg(isoDate) {
   if (!isoDate || typeof isoDate !== 'string') {
     return '';
@@ -49,7 +52,7 @@ if (quoteForm && formNote) {
 
     formNote.textContent = 'Изпращане...';
 
-    const sendEndpoint = window.location.pathname.includes('/statii/') ? '../send.php' : 'send.php';
+    const sendEndpoint = apiUrl('/send.php');
 
     try {
       const response = await fetch(sendEndpoint, {
@@ -123,10 +126,8 @@ faqItems.forEach((item) => {
   });
 });
 
-const PHP_BASE = "http://46.183.117.128:8791";
-
 async function loadApprovedReviews(limit = 12) {
-  const response = await fetch(`${PHP_BASE}/reviews.php?limit=${encodeURIComponent(limit)}`, {
+  const response = await fetch(`${apiUrl('/reviews.php')}?limit=${encodeURIComponent(limit)}`, {
     method: 'GET',
     cache: 'no-store'
   });
@@ -227,7 +228,7 @@ async function wireReviewForm() {
 
     const fd = new FormData(form);
     try {
-      const res = await fetch(`${PHP_BASE}/submit-review.php`, { method: "POST", body: fd });
+      const res = await fetch(apiUrl('/submit-review.php'), { method: "POST", body: fd });
       const json = await res.json();
       if (!json.ok) throw new Error(json.message || "Грешка");
 
