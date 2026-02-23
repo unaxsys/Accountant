@@ -385,6 +385,10 @@ h1 {
   margin-top: 2rem;
 }
 
+.process .cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .nationwide {
   background: var(--card);
   border: 1px solid var(--border);
@@ -636,6 +640,10 @@ footer {
   .cards,
   .about {
     grid-template-columns: 1fr;
+  }
+
+  .process .cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .cta-strip {
