@@ -1,8 +1,4 @@
 <?php
-header('Access-Control-Allow-Origin: http://46.183.117.128:8790');
-header('Access-Control-Allow-Methods: POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 // submit-review.php
 require_once __DIR__ . '/db.php';
 
