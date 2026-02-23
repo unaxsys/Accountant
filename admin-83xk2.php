@@ -727,26 +727,45 @@ $msg = (string)($_GET['msg'] ?? '');
         <input type="hidden" name="id" value="<?= h($article_edit['id'] ?? '') ?>">
 
         <label>Заглавие *</label>
-        <input id="article-title" name="title" required value="<?= h($article_edit['title'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="title" name="title" data-maxlen="120" required value="<?= h($article_edit['title'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="title_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Slug (автоматично, може да редактираш)</label>
-        <input id="article-slug" name="slug" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="slug" name="slug" data-maxlen="180" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="slug_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
+
+        <label>SEO Title (30-60 символа)</label>
+        <input id="seo_title" name="seo_title" data-maxlen="60" value="<?= h($article_edit['seo_title'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="seo_title_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
+
+        <label>Focus keyword</label>
+        <input id="focus_keyword" name="focus_keyword" data-maxlen="80" value="<?= h($article_edit['focus_keyword'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="focus_keyword_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Meta description (до 160 символа)</label>
-        <input name="meta_description" maxlength="160" value="<?= h($article_edit['meta_description'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="meta_description" name="meta_description" data-maxlen="160" value="<?= h($article_edit['meta_description'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="meta_description_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Кратко описание</label>
-        <textarea name="excerpt" rows="3" style="width:100%;margin:6px 0 12px;"><?= h($article_edit['excerpt'] ?? '') ?></textarea>
+        <textarea id="excerpt" name="excerpt" data-maxlen="320" rows="3" style="width:100%;margin:6px 0 4px;"><?= h($article_edit['excerpt'] ?? '') ?></textarea>
+        <div id="excerpt_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Тагове (разделени със запетая)</label>
-        <input name="tags" value="<?= h($article_edit['tags'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="tags" name="tags" data-maxlen="255" value="<?= h($article_edit['tags'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="tags_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Cover image</label>
         <input type="file" name="cover_image" accept="image/*" style="width:100%;margin:6px 0 12px;">
+
+        <label>Cover image ALT</label>
+        <input id="cover_alt" name="cover_alt" data-maxlen="160" value="<?= h($article_edit['cover_alt'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="cover_alt_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
         <?php if (!empty($article_edit['cover_image'])): ?><p class="muted">Текущо: <code><?= h($article_edit['cover_image']) ?></code></p><?php endif; ?>
 
         <label>Съдържание (HTML) *</label>
-        <textarea name="content_html" rows="12" required style="width:100%;margin:6px 0 12px;"><?= h($article_edit['content_html'] ?? '') ?></textarea>
+        <textarea id="editor" name="content_html" rows="12" required style="width:100%;margin:6px 0 12px;"><?= h($article_edit['content_html'] ?? '') ?></textarea>
+
+        <div id="seoPanel"></div>
 
         <label style="display:flex;align-items:center;gap:8px;margin:6px 0 12px;">
           <input type="checkbox" name="publish_now" value="1" <?= (($article_edit['status'] ?? '') === 'published') ? 'checked' : '' ?>>
@@ -806,16 +825,139 @@ $msg = (string)($_GET['msg'] ?? '');
 
 <script>
 (function(){
-  const title=document.getElementById('article-title');
-  const slug=document.getElementById('article-slug');
-  if(!title||!slug) return;
+  const title = document.getElementById('title');
+  const seoTitle = document.getElementById('seo_title');
+  const slug = document.getElementById('slug');
+  const meta = document.getElementById('meta_description');
+  const keyword = document.getElementById('focus_keyword');
+  const coverAlt = document.getElementById('cover_alt');
+  const editor = document.getElementById('editor');
+  const panel = document.getElementById('seoPanel');
+  const tags = document.getElementById('tags');
+  const excerpt = document.getElementById('excerpt');
+
+  function attachRemainingCounter(input, counterId){
+    if (!input) return;
+    const max = parseInt(input.dataset.maxlen || '', 10);
+    if (!max || Number.isNaN(max)) return;
+    const counter = document.getElementById(counterId);
+    if (!counter) return;
+
+    const update = () => {
+      const valueLength = (input.value || '').length;
+      const remaining = max - valueLength;
+      counter.textContent = `Оставащи символи: ${remaining}`;
+      counter.style.color = remaining < 0 ? '#b00020' : '#667';
+    };
+
+    input.addEventListener('input', update);
+    input.addEventListener('change', update);
+    update();
+  }
+
+
   function toSlug(v){
     const map={'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'sht','ъ':'a','ь':'','ю':'yu','я':'ya'};
-    v=v.toLowerCase().trim().replace(/[а-я]/g,ch=>map[ch]||ch);
+    v=(v||'').toLowerCase().trim().replace(/[а-я]/g,ch=>map[ch]||ch);
     return v.replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
   }
-  title.addEventListener('input',()=>{ if(!slug.dataset.touched){ slug.value=toSlug(title.value);} });
-  slug.addEventListener('input',()=>slug.dataset.touched='1');
+
+  function strip(html){
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html || '';
+    return (tmp.textContent || tmp.innerText || '').trim();
+  }
+
+  function countOccurrences(text, needle){
+    if (!needle) return 0;
+    const re = new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    const m = text.match(re);
+    return m ? m.length : 0;
+  }
+
+  function getContentHtml(){
+    try {
+      if (window.tinymce && tinymce.get('editor')) {
+        return tinymce.get('editor').getContent();
+      }
+    } catch(e) {}
+    return editor ? editor.value : '';
+  }
+
+  function run(){
+    const kw = (keyword?.value || '').trim();
+    const t = (title?.value || '').trim();
+    const st = (seoTitle?.value || '').trim();
+    const md = (meta?.value || '').trim();
+    const sl = (slug?.value || '').trim();
+    const alt = (coverAlt?.value || '').trim();
+    const html = getContentHtml();
+    const text = strip(html);
+
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const kwCount = kw ? countOccurrences(text.toLowerCase(), kw.toLowerCase()) : 0;
+    const density = words && kw ? (kwCount / words) * 100 : 0;
+
+    const checks = [];
+    checks.push({ ok: kw && t.toLowerCase().includes(kw.toLowerCase()), label: 'Ключовата дума е в заглавието (Title)' });
+    checks.push({ ok: kw && (st || t).toLowerCase().includes(kw.toLowerCase()), label: 'Ключовата дума е в SEO Title' });
+    checks.push({ ok: kw && md.toLowerCase().startsWith(kw.toLowerCase()), label: 'Meta Description започва с ключовата дума' });
+    checks.push({ ok: md.length >= 120 && md.length <= 160, label: 'Meta Description 120–160 символа' });
+    checks.push({ ok: (st || t).length >= 30 && (st || t).length <= 60, label: 'SEO Title 30–60 символа' });
+    checks.push({ ok: sl.length >= 5, label: 'Slug е попълнен' });
+    checks.push({ ok: words >= 600, label: 'Текстът е минимум 600 думи' });
+    checks.push({ ok: /<h2\b/i.test(html), label: 'Има поне 1 H2' });
+    checks.push({ ok: kw ? new RegExp(`<h2[^>]*>[^<]*${kw}[^<]*</h2>`, 'i').test(html) : false, label: 'Ключовата дума присъства в H2 (препоръчително)' });
+    checks.push({ ok: /<a\s+[^>]*href="https?:\/\//i.test(html), label: 'Има външен линк' });
+    checks.push({ ok: /<a\s+[^>]*href="(?!https?:\/\/)/i.test(html), label: 'Има вътрешен линк' });
+    checks.push({ ok: alt.length >= 3, label: 'Cover image ALT е попълнен' });
+    checks.push({ ok: kw ? (density >= 0.5 && density <= 2.5) : false, label: 'Keyword density ~0.5%–2.5% (ориентир)' });
+
+    const max = checks.length;
+    const passed = checks.filter(x => x.ok).length;
+    const score = Math.round((passed / max) * 100);
+
+    if (panel) {
+      panel.innerHTML = `
+        <div style="border:1px solid #e7eef9;border-radius:14px;padding:12px 14px;background:#fbfcff;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <strong>SEO Score (RankMath-style): ${score}%</strong>
+            <span style="color:#556070;font-size:12px;">Думи: ${words} · KW: ${kwCount} · Density: ${density.toFixed(2)}%</span>
+          </div>
+          <ul style="margin:10px 0 0;padding-left:18px;">
+            ${checks.map(c => `<li style="margin:6px 0;color:${c.ok ? 'green' : 'crimson'};">${c.label}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+  }
+
+  if (title && slug) {
+    title.addEventListener('input',()=>{ if(!slug.dataset.touched){ slug.value=toSlug(title.value); run(); } });
+    slug.addEventListener('input',()=>{ slug.dataset.touched='1'; run(); });
+  }
+
+  ['input','change'].forEach(ev=>{
+    title?.addEventListener(ev, run);
+    seoTitle?.addEventListener(ev, run);
+    meta?.addEventListener(ev, run);
+    keyword?.addEventListener(ev, run);
+    coverAlt?.addEventListener(ev, run);
+    editor?.addEventListener(ev, run);
+  });
+
+  attachRemainingCounter(title, 'title_remaining');
+  attachRemainingCounter(slug, 'slug_remaining');
+  attachRemainingCounter(seoTitle, 'seo_title_remaining');
+  attachRemainingCounter(keyword, 'focus_keyword_remaining');
+  attachRemainingCounter(meta, 'meta_description_remaining');
+  attachRemainingCounter(excerpt, 'excerpt_remaining');
+  attachRemainingCounter(tags, 'tags_remaining');
+  attachRemainingCounter(coverAlt, 'cover_alt_remaining');
+
+  document.addEventListener('tinymce-editor-init', run);
+  setInterval(run, 1200);
+  run();
 })();
 </script>
 

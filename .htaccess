@@ -24,7 +24,7 @@ DirectoryIndex index.html index.php
   # SEO blog routes
   RewriteRule ^blog$ /blog/ [R=301,L]
   RewriteRule ^blog/$ /blog/index.php [L,QSA]
-  RewriteRule ^blog/([a-z0-9-]+)/?$ /blog.php?slug=$1 [L,QSA]
+  RewriteRule ^blog/([a-z0-9-]+)/?$ /blog/post.php?slug=$1 [L,QSA]
 
   # Blog sitemap endpoint
   RewriteRule ^sitemap-blog\.xml$ /sitemap-blog.php [L,QSA]

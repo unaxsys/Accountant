@@ -1,33 +1,58 @@
 <?php
-declare(strict_types=1);
-require_once __DIR__ . '/posts_lib.php';
+require_once __DIR__ . '/includes/blog_helpers.php';
 
-header('Content-Type: application/xml; charset=UTF-8');
+$pdo = db();
+$base = base_url();
 
-$base = rtrim(defined('SITE_URL') ? SITE_URL : 'https://magos.bg', '/');
-$posts = [];
-try {
-  $pdo = posts_db();
-  $posts = $pdo->query("SELECT slug, published_at, updated_at FROM posts WHERE status='published' ORDER BY published_at DESC")->fetchAll();
-} catch (Throwable $e) {
-  $posts = [];
+header('Content-Type: application/xml; charset=utf-8');
+
+$cacheDir = __DIR__ . '/cache';
+$cacheFile = $cacheDir . '/sitemap-blog.xml';
+$cacheTtl = 1800;
+
+if (!is_dir($cacheDir)) {
+    @mkdir($cacheDir, 0775, true);
 }
 
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc><?= htmlspecialchars($base . '/statii/', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-<?php foreach ($posts as $post): ?>
-  <url>
-    <loc><?= htmlspecialchars($base . '/statii/' . rawurlencode((string)$post['slug']), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></loc>
-    <?php $lm = strtotime((string)($post['updated_at'] ?: $post['published_at'])); ?>
-    <?php if ($lm): ?><lastmod><?= date('Y-m-d', $lm) ?></lastmod><?php endif; ?>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<?php endforeach; ?>
-</urlset>
+if (file_exists($cacheFile) && (time() - (int)filemtime($cacheFile) < $cacheTtl)) {
+    readfile($cacheFile);
+    exit;
+}
+
+$stmt = $pdo->prepare("
+  SELECT slug, updated_at, published_at
+  FROM posts
+  WHERE status='published'
+  ORDER BY published_at DESC, updated_at DESC
+");
+$stmt->execute();
+$rows = $stmt->fetchAll();
+
+$xml = [];
+$xml[] = '<?xml version="1.0" encoding="UTF-8"?>';
+$xml[] = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+$xml[] = '<url>';
+$xml[] = '<loc>' . h($base . '/blog/') . '</loc>';
+$xml[] = '<changefreq>daily</changefreq>';
+$xml[] = '<priority>0.8</priority>';
+$xml[] = '</url>';
+
+foreach ($rows as $r) {
+    $loc = $base . '/blog/' . $r['slug'];
+    $lastmod = $r['updated_at'] ?: $r['published_at'];
+    $lastmodIso = $lastmod ? date('c', strtotime((string)$lastmod)) : date('c');
+
+    $xml[] = '<url>';
+    $xml[] = '<loc>' . h($loc) . '</loc>';
+    $xml[] = '<lastmod>' . h($lastmodIso) . '</lastmod>';
+    $xml[] = '<changefreq>monthly</changefreq>';
+    $xml[] = '<priority>0.6</priority>';
+    $xml[] = '</url>';
+}
+
+$xml[] = '</urlset>';
+
+$out = implode("\n", $xml);
+file_put_contents($cacheFile, $out);
+echo $out;
