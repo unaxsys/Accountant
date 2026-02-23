@@ -727,31 +727,39 @@ $msg = (string)($_GET['msg'] ?? '');
         <input type="hidden" name="id" value="<?= h($article_edit['id'] ?? '') ?>">
 
         <label>Заглавие *</label>
-        <input id="title" name="title" required value="<?= h($article_edit['title'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="title" name="title" data-maxlen="120" required value="<?= h($article_edit['title'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="title_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Slug (автоматично, може да редактираш)</label>
-        <input id="slug" name="slug" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="slug" name="slug" data-maxlen="180" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="slug_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>SEO Title (30-60 символа)</label>
-        <input id="seo_title" name="seo_title" value="<?= h($article_edit['seo_title'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="seo_title" name="seo_title" data-maxlen="60" value="<?= h($article_edit['seo_title'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="seo_title_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Focus keyword</label>
-        <input id="focus_keyword" name="focus_keyword" value="<?= h($article_edit['focus_keyword'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="focus_keyword" name="focus_keyword" data-maxlen="80" value="<?= h($article_edit['focus_keyword'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="focus_keyword_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Meta description (до 160 символа)</label>
-        <input id="meta_description" name="meta_description" maxlength="160" value="<?= h($article_edit['meta_description'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="meta_description" name="meta_description" data-maxlen="160" value="<?= h($article_edit['meta_description'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="meta_description_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Кратко описание</label>
-        <textarea name="excerpt" rows="3" style="width:100%;margin:6px 0 12px;"><?= h($article_edit['excerpt'] ?? '') ?></textarea>
+        <textarea id="excerpt" name="excerpt" data-maxlen="320" rows="3" style="width:100%;margin:6px 0 4px;"><?= h($article_edit['excerpt'] ?? '') ?></textarea>
+        <div id="excerpt_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Тагове (разделени със запетая)</label>
-        <input name="tags" value="<?= h($article_edit['tags'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="tags" name="tags" data-maxlen="255" value="<?= h($article_edit['tags'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="tags_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
         <label>Cover image</label>
         <input type="file" name="cover_image" accept="image/*" style="width:100%;margin:6px 0 12px;">
 
         <label>Cover image ALT</label>
-        <input id="cover_alt" name="cover_alt" value="<?= h($article_edit['cover_alt'] ?? '') ?>" style="width:100%;margin:6px 0 12px;">
+        <input id="cover_alt" name="cover_alt" data-maxlen="160" value="<?= h($article_edit['cover_alt'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
+        <div id="cover_alt_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
         <?php if (!empty($article_edit['cover_image'])): ?><p class="muted">Текущо: <code><?= h($article_edit['cover_image']) ?></code></p><?php endif; ?>
 
         <label>Съдържание (HTML) *</label>
@@ -825,6 +833,28 @@ $msg = (string)($_GET['msg'] ?? '');
   const coverAlt = document.getElementById('cover_alt');
   const editor = document.getElementById('editor');
   const panel = document.getElementById('seoPanel');
+  const tags = document.getElementById('tags');
+  const excerpt = document.getElementById('excerpt');
+
+  function attachRemainingCounter(input, counterId){
+    if (!input) return;
+    const max = parseInt(input.dataset.maxlen || '', 10);
+    if (!max || Number.isNaN(max)) return;
+    const counter = document.getElementById(counterId);
+    if (!counter) return;
+
+    const update = () => {
+      const valueLength = (input.value || '').length;
+      const remaining = max - valueLength;
+      counter.textContent = `Оставащи символи: ${remaining}`;
+      counter.style.color = remaining < 0 ? '#b00020' : '#667';
+    };
+
+    input.addEventListener('input', update);
+    input.addEventListener('change', update);
+    update();
+  }
+
 
   function toSlug(v){
     const map={'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'sht','ъ':'a','ь':'','ю':'yu','я':'ya'};
@@ -915,6 +945,15 @@ $msg = (string)($_GET['msg'] ?? '');
     coverAlt?.addEventListener(ev, run);
     editor?.addEventListener(ev, run);
   });
+
+  attachRemainingCounter(title, 'title_remaining');
+  attachRemainingCounter(slug, 'slug_remaining');
+  attachRemainingCounter(seoTitle, 'seo_title_remaining');
+  attachRemainingCounter(keyword, 'focus_keyword_remaining');
+  attachRemainingCounter(meta, 'meta_description_remaining');
+  attachRemainingCounter(excerpt, 'excerpt_remaining');
+  attachRemainingCounter(tags, 'tags_remaining');
+  attachRemainingCounter(coverAlt, 'cover_alt_remaining');
 
   document.addEventListener('tinymce-editor-init', run);
   setInterval(run, 1200);
