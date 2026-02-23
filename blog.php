@@ -96,30 +96,51 @@ if ($currentPost === null) {
     exit;
 }
 
-$title = (string)($currentPost['title'] ?? 'Статия');
-$metaDescription = (string)($currentPost['meta_description'] ?? $currentPost['excerpt'] ?? $title);
-$excerpt = (string)($currentPost['excerpt'] ?? '');
-$publishedTs = post_timestamp($currentPost);
-$contentHtml = (string)($currentPost['content_html'] ?? '<p>Съдържанието скоро ще бъде добавено.</p>');
-$canonicalUrl = BLOG_BASE_URL . '/blog/' . rawurlencode($slug);
-$ogImage = (string)($currentPost['cover_image'] ?? (BLOG_BASE_URL . '/magos-logo.png'));
-$relatedPosts = find_related_posts($posts, $currentPost, 3);
+$post = $currentPost;
+$BASE_URL = BLOG_BASE_URL;
+$title = $post['seo_title'] ?: $post['title'];
+$metaDescription = $post['meta_description'];
+$canonicalUrl = $BASE_URL . '/blog/' . $post['slug'];
+$ogImage = $BASE_URL . '/' . $post['cover_image'];
+$excerpt = (string)($post['excerpt'] ?? '');
+$publishedTs = post_timestamp($post);
+$contentHtml = (string)($post['content_html'] ?? '<p>Съдържанието скоро ще бъде добавено.</p>');
+$relatedPosts = find_related_posts($posts, $post, 3);
 ?>
 <!doctype html>
 <html lang="bg">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= e($title) ?> | magos.bg</title>
-  <meta name="description" content="<?= e($metaDescription) ?>">
-  <link rel="canonical" href="<?= e($canonicalUrl) ?>">
+  <title><?= htmlspecialchars($title) ?></title>
+  <meta name="description" content="<?= htmlspecialchars($metaDescription) ?>">
+  <link rel="canonical" href="<?= htmlspecialchars($canonicalUrl) ?>">
 
+  <meta property="og:title" content="<?= htmlspecialchars($title) ?>">
+  <meta property="og:description" content="<?= htmlspecialchars($metaDescription) ?>">
+  <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
+  <meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
   <meta property="og:type" content="article">
-  <meta property="og:site_name" content="magos.bg">
-  <meta property="og:title" content="<?= e($title) ?>">
-  <meta property="og:description" content="<?= e($metaDescription) ?>">
-  <meta property="og:url" content="<?= e($canonicalUrl) ?>">
-  <meta property="og:image" content="<?= e($ogImage) ?>">
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "<?= addslashes($post['title']) ?>",
+  "description": "<?= addslashes($metaDescription) ?>",
+  "image": "<?= $ogImage ?>",
+  "author": {
+    "@type": "Organization",
+    "name": "Магос ЕООД"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Магос ЕООД"
+  },
+  "datePublished": "<?= $post['published_at'] ?>",
+  "dateModified": "<?= $post['updated_at'] ?>"
+}
+</script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
