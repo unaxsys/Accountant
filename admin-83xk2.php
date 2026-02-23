@@ -554,6 +554,12 @@ $msg = (string)($_GET['msg'] ?? '');
     .btn-ghost{background:#fff;color:#2f6fed;border:1px solid #d9e1ef}
     .danger{background:#e24343;color:#fff}
     .notice{background:#fff4e5;border:1px solid #ffce8a;color:#8a4b00;padding:10px 12px;border-radius:10px}
+    /* SEO preview */
+    .seo-preview{border:1px solid #e7eef9;border-radius:14px;padding:12px 14px;background:#fff;margin:0 0 12px}
+    .seo-preview .url{color:#1a0dab;font-size:12px;opacity:.75;margin-top:4px}
+    .seo-preview .t{color:#1a0dab;font-size:18px;font-weight:800;line-height:1.15;margin:0}
+    .seo-preview .d{color:#4d5156;font-size:13px;margin-top:6px;line-height:1.4}
+    .seo-preview .hint{color:#667;font-size:12px;margin-top:8px}
   </style>
     <!-- Google tag  (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
@@ -765,6 +771,7 @@ $msg = (string)($_GET['msg'] ?? '');
         <label>Съдържание (HTML) *</label>
         <textarea id="editor" name="content_html" rows="12" required style="width:100%;margin:6px 0 12px;"><?= h($article_edit['content_html'] ?? '') ?></textarea>
 
+        <div id="seoPreview"></div>
         <div id="seoPanel"></div>
 
         <label style="display:flex;align-items:center;gap:8px;margin:6px 0 12px;">
@@ -833,8 +840,11 @@ $msg = (string)($_GET['msg'] ?? '');
   const coverAlt = document.getElementById('cover_alt');
   const editor = document.getElementById('editor');
   const panel = document.getElementById('seoPanel');
+  const preview = document.getElementById('seoPreview');
   const tags = document.getElementById('tags');
   const excerpt = document.getElementById('excerpt');
+
+  const form = document.querySelector('form[enctype="multipart/form-data"]');
 
   function attachRemainingCounter(input, counterId){
     if (!input) return;
@@ -848,13 +858,13 @@ $msg = (string)($_GET['msg'] ?? '');
       const remaining = max - valueLength;
       counter.textContent = `Оставащи символи: ${remaining}`;
       counter.style.color = remaining < 0 ? '#b00020' : '#667';
+      input.dataset.remaining = String(remaining);
     };
 
     input.addEventListener('input', update);
     input.addEventListener('change', update);
     update();
   }
-
 
   function toSlug(v){
     const map={'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'sht','ъ':'a','ь':'','ю':'yu','я':'ya'};
@@ -884,7 +894,95 @@ $msg = (string)($_GET['msg'] ?? '');
     return editor ? editor.value : '';
   }
 
+  function smartTruncate(s, max){
+    s = (s || '').trim();
+    if (s.length <= max) return s;
+    return s.slice(0, Math.max(0, max - 1)).trim() + '…';
+  }
+
+  // mark fields as "touched" only if user edits them manually
+  function markTouched(el){
+    if (!el) return;
+    el.addEventListener('input', () => { el.dataset.touched = '1'; }, { passive: true });
+  }
+
+  markTouched(slug);
+  markTouched(seoTitle);
+  markTouched(meta);
+  markTouched(keyword);
+  markTouched(coverAlt);
+  markTouched(tags);
+  markTouched(excerpt);
+
+  // auto-fill helpers (only when empty + not touched)
+  function autoFillIfEmpty(el, value){
+    if (!el) return;
+    const cur = (el.value || '').trim();
+    const touched = el.dataset.touched === '1';
+    if (!touched && cur === '' && (value || '').trim() !== '') {
+      el.value = value;
+      // don't mark touched; it's system fill
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+
+  function getSuggestedMeta(){
+    // prefer excerpt, else first 160 chars from content text
+    const ex = (excerpt?.value || '').trim();
+    if (ex) return smartTruncate(ex.replace(/\s+/g,' '), 160);
+
+    const text = strip(getContentHtml()).replace(/\s+/g,' ');
+    return smartTruncate(text, 160);
+  }
+
+  function updateAutoFill(){
+    const t = (title?.value || '').trim();
+    const kw = (keyword?.value || '').trim();
+
+    // slug from title (if slug not touched)
+    if (title && slug && slug.dataset.touched !== '1') {
+      const s = toSlug(title.value);
+      if ((slug.value || '').trim() === '' || toSlug(slug.value) === toSlug(slug.value)) {
+        slug.value = s;
+        slug.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+
+    // seo_title defaults to title
+    autoFillIfEmpty(seoTitle, t);
+
+    // meta_description defaults from excerpt/content
+    autoFillIfEmpty(meta, getSuggestedMeta());
+
+    // cover_alt defaults to "KW – Title" or Title
+    const alt = kw ? `${kw} – ${t}` : t;
+    autoFillIfEmpty(coverAlt, smartTruncate(alt, 160));
+  }
+
+  function renderPreview(){
+    if (!preview) return;
+
+    const t = (title?.value || '').trim();
+    const st = (seoTitle?.value || '').trim() || t;
+    const md = (meta?.value || '').trim();
+    const sl = (slug?.value || '').trim();
+
+    const base = (location && location.origin) ? location.origin : '';
+    const url = sl ? `${base}/blog/${sl}` : `${base}/blog/`;
+
+    preview.innerHTML = `
+      <div class="seo-preview">
+        <div class="url">${url}</div>
+        <p class="t">${st || 'SEO Title'}</p>
+        <div class="d">${md || 'Meta description ще се показва тук (120–160 символа).'}</div>
+        <div class="hint">Преглед като Google snippet (ориентировъчно).</div>
+      </div>
+    `;
+  }
+
   function run(){
+    updateAutoFill();
+
     const kw = (keyword?.value || '').trim();
     const t = (title?.value || '').trim();
     const st = (seoTitle?.value || '').trim();
@@ -930,10 +1028,13 @@ $msg = (string)($_GET['msg'] ?? '');
         </div>
       `;
     }
+
+    renderPreview();
   }
 
+  // title -> slug if not touched (your existing behavior)
   if (title && slug) {
-    title.addEventListener('input',()=>{ if(!slug.dataset.touched){ slug.value=toSlug(title.value); run(); } });
+    title.addEventListener('input',()=>{ if(!slug.dataset.touched){ slug.value=toSlug(title.value); } run(); });
     slug.addEventListener('input',()=>{ slug.dataset.touched='1'; run(); });
   }
 
@@ -943,9 +1044,12 @@ $msg = (string)($_GET['msg'] ?? '');
     meta?.addEventListener(ev, run);
     keyword?.addEventListener(ev, run);
     coverAlt?.addEventListener(ev, run);
+    tags?.addEventListener(ev, run);
+    excerpt?.addEventListener(ev, run);
     editor?.addEventListener(ev, run);
   });
 
+  // remaining counters
   attachRemainingCounter(title, 'title_remaining');
   attachRemainingCounter(slug, 'slug_remaining');
   attachRemainingCounter(seoTitle, 'seo_title_remaining');
@@ -955,6 +1059,35 @@ $msg = (string)($_GET['msg'] ?? '');
   attachRemainingCounter(tags, 'tags_remaining');
   attachRemainingCounter(coverAlt, 'cover_alt_remaining');
 
+  // soft warnings on submit (non-blocking, confirm only)
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      const t = (title?.value || '').trim();
+      const st = (seoTitle?.value || '').trim() || t;
+      const md = (meta?.value || '').trim();
+
+      const problems = [];
+
+      if (st.length < 30 || st.length > 60) problems.push(`SEO Title е ${st.length} символа (препоръка: 30–60).`);
+      if (md.length < 120 || md.length > 160) problems.push(`Meta Description е ${md.length} символа (препоръка: 120–160).`);
+      if (!keyword?.value?.trim()) problems.push('Focus keyword е празно (препоръчително).');
+
+      // If too much over the limit, ask confirm
+      if (problems.length) {
+        const msg =
+          "Има SEO предупреждения:\n\n- " + problems.join("\n- ") +
+          "\n\nИскаш ли да продължиш и да запазиш/публикуваш така?";
+        if (!confirm(msg)) {
+          e.preventDefault();
+          e.stopPropagation();
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  // tinymce support (if present)
   document.addEventListener('tinymce-editor-init', run);
   setInterval(run, 1200);
   run();
