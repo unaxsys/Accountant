@@ -314,6 +314,9 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     $content = sanitize_trusted_html(trim((string)($_POST['content_html'] ?? '')));
     $tags = trim((string)($_POST['tags'] ?? ''));
     $status = !empty($_POST['publish_now']) ? 'published' : 'draft';
+    $seoTitle = trim((string)($_POST['seo_title'] ?? ''));
+    $focusKeyword = trim((string)($_POST['focus_keyword'] ?? ''));
+    $coverAlt = trim((string)($_POST['cover_alt'] ?? ''));
 
     if ($title === '' || $content === '') {
       throw new RuntimeException('Заглавие и съдържание са задължителни.');
@@ -367,11 +370,20 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
       ]);
     } else {
       $publishedAt = $status === 'published' ? $now : null;
-      $i = $pdoPosts->prepare('INSERT INTO posts (slug,title,meta_description,excerpt,content_html,cover_image,tags,status,published_at,created_at,updated_at) VALUES (:slug,:title,:meta,:excerpt,:content,:cover,:tags,:status,:published_at,:created_at,:updated_at)');
+      $i = $pdoPosts->prepare('INSERT INTO posts (title,seo_title,slug,meta_description,focus_keyword,excerpt,content_html,cover_image,cover_alt,tags,status,published_at,created_at) VALUES (:title,:seo_title,:slug,:meta,:focus_keyword,:excerpt,:content,:cover,:cover_alt,:tags,:status,:published_at,NOW())');
       $i->execute([
-        ':slug'=>$slug, ':title'=>$title, ':meta'=>utf8_cut($meta,160), ':excerpt'=>$excerpt,
-        ':content'=>$content, ':cover'=>$coverImage, ':tags'=>$tags !== '' ? $tags : null,
-        ':status'=>$status, ':published_at'=>$publishedAt, ':created_at'=>$now, ':updated_at'=>$now,
+        ':title' => $title,
+        ':seo_title' => $seoTitle !== '' ? $seoTitle : $title,
+        ':slug' => $slug,
+        ':meta' => utf8_cut($meta, 160),
+        ':focus_keyword' => $focusKeyword !== '' ? $focusKeyword : null,
+        ':excerpt' => $excerpt,
+        ':content' => $content,
+        ':cover' => $coverImage,
+        ':cover_alt' => $coverAlt !== '' ? $coverAlt : null,
+        ':tags' => $tags !== '' ? $tags : null,
+        ':status' => $status,
+        ':published_at' => $publishedAt,
       ]);
     }
 
