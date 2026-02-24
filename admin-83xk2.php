@@ -4,6 +4,25 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/db.php';
 
+if (!defined('ADMIN_USER')) {
+  $adminUserFromEnv = getenv('ADMIN_USER');
+  define('ADMIN_USER', is_string($adminUserFromEnv) && $adminUserFromEnv !== '' ? $adminUserFromEnv : 'admin');
+}
+
+if (!defined('ADMIN_PASS_HASH')) {
+  $adminHashFromEnv = getenv('ADMIN_PASS_HASH');
+  if (is_string($adminHashFromEnv) && $adminHashFromEnv !== '') {
+    define('ADMIN_PASS_HASH', $adminHashFromEnv);
+  }
+}
+
+if (!defined('ADMIN_PASS')) {
+  $adminPassFromEnv = getenv('ADMIN_PASS');
+  if (is_string($adminPassFromEnv) && $adminPassFromEnv !== '') {
+    define('ADMIN_PASS', $adminPassFromEnv);
+  }
+}
+
 session_start();
 
 $tab = (string)($_GET['tab'] ?? 'reviews');
@@ -20,6 +39,20 @@ function csrf_token(): string {
 
 function is_admin(): bool {
   return !empty($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
+}
+
+function admin_password_ok(string $password): bool {
+  if (defined('ADMIN_PASS_HASH') && is_string(ADMIN_PASS_HASH) && ADMIN_PASS_HASH !== '') {
+    if (password_verify($password, ADMIN_PASS_HASH)) {
+      return true;
+    }
+  }
+
+  if (defined('ADMIN_PASS') && is_string(ADMIN_PASS) && ADMIN_PASS !== '') {
+    return hash_equals(ADMIN_PASS, $password);
+  }
+
+  return false;
 }
 
 function require_admin_or_404(): void {
@@ -161,7 +194,7 @@ if (!is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?
   $u = (string)($_POST['username'] ?? '');
   $p = (string)($_POST['password'] ?? '');
 
-  if ($u === ADMIN_USER && password_verify($p, ADMIN_PASS_HASH)) {
+  if ($u === ADMIN_USER && admin_password_ok($p)) {
     $_SESSION['is_admin'] = true;
     csrf_token();
     header('Location: admin-83xk2.php');
