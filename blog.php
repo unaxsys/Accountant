@@ -14,7 +14,7 @@ function e(string $value): string
 function load_posts(): array
 {
     try {
-        $stmt = posts_pdo()->query("SELECT slug, title, seo_title, excerpt, content_html, cover_image, tags, meta_description, published_at, created_at FROM posts WHERE status='published' ORDER BY published_at DESC, created_at DESC");
+        $stmt = posts_pdo()->query("SELECT * FROM posts WHERE status='published' ORDER BY published_at DESC, created_at DESC");
         $rows = $stmt->fetchAll();
 
         if (is_array($rows) && $rows !== []) {
