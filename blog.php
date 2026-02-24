@@ -4,6 +4,8 @@ declare(strict_types=1);
 const BLOG_DATA_FILE = __DIR__ . '/data/posts.json';
 const BLOG_BASE_URL = 'https://magos.bg';
 
+require_once __DIR__ . '/includes/db.php';
+
 function e(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -11,6 +13,25 @@ function e(string $value): string
 
 function load_posts(): array
 {
+    try {
+        $stmt = posts_pdo()->query("SELECT slug, title, seo_title, excerpt, content_html, cover_image, tags, meta_description, published_at, created_at FROM posts WHERE status='published' ORDER BY published_at DESC, created_at DESC");
+        $rows = $stmt->fetchAll();
+
+        if (is_array($rows) && $rows !== []) {
+            return array_map(static function (array $row): array {
+                $tags = trim((string)($row['tags'] ?? ''));
+                $row['tags'] = $tags === ''
+                    ? []
+                    : array_values(array_filter(array_map('trim', explode(',', $tags)), static fn(string $tag): bool => $tag !== ''));
+
+                return $row;
+            }, $rows);
+        }
+    } catch (Throwable $e) {
+        error_log('blog.php DB fallback: ' . $e->getMessage());
+        // Fallback to JSON, to keep the page available if DB is temporarily unavailable.
+    }
+
     if (!is_file(BLOG_DATA_FILE)) {
         return [];
     }
