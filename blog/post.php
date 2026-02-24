@@ -119,6 +119,10 @@ if (!empty($faq)) {
       <?php endforeach; ?>
     </nav>
 
+    <div style="margin:0 0 14px;">
+      <a href="/blog/" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid #d7e2f3; border-radius:12px; background:#fff; color:#1f3f75; font-weight:700; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,.05);">← Назад към статиите</a>
+    </div>
+
     <div class="hero" style="border:1px solid #e7eef9; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.07); background:#fff;">
       <?php if ($ogImage): ?>
         <img src="<?= h($ogImage) ?>" alt="<?= h((string)($post['cover_alt'] ?: $post['title'])) ?>" style="width:100%; height:320px; object-fit:cover; display:block; background:#f3f6ff;">
@@ -140,6 +144,10 @@ if (!empty($faq)) {
     <?php if (!empty($faq)): ?>
       <div class="faqHint" style="margin-top:18px; padding:12px 14px; border:1px solid #e7eef9; border-radius:14px; background:#fbfcff; color:#556070; font-size:13px;">Открит е FAQ блок в статията – автоматично добавихме FAQ schema (rich results).</div>
     <?php endif; ?>
+
+    <div style="margin-top:18px;">
+      <a href="/blog/" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid #d7e2f3; border-radius:12px; background:#fff; color:#1f3f75; font-weight:700; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,.05);">← Назад към статиите</a>
+    </div>
 
     <div class="authorbox" style="margin-top:28px; border-top:1px solid #e7eef9; padding-top:16px; display:flex; gap:12px; align-items:flex-start;">
       <div class="avatar" style="width:44px; height:44px; border-radius:12px; background:#f3f6ff; display:flex; align-items:center; justify-content:center; font-weight:800;">M</div>
