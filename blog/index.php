@@ -61,6 +61,8 @@ function page_url(int $p, string $q, string $tag): string {
   <meta property="og:description" content="Практични статии за счетоводство, ДДС и ТРЗ от Магос ЕООД.">
   <meta property="og:url" content="<?= h($base . '/blog/') ?>">
   <meta property="og:type" content="website">
+  <link rel="icon" type="image/png" href="/tab-logo.png">
+  <link rel="apple-touch-icon" href="/tab-logo.png">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
