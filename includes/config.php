@@ -9,6 +9,7 @@ if (!defined('MYSQL_USER')) define('MYSQL_USER', 'magosbgf_bloguser');
 if (!defined('MYSQL_PASS')) define('MYSQL_PASS', 'Lamer4e*#');
 
 if (!defined('SITE_URL'))   define('SITE_URL', 'https://magos.bg');
+
 // ===========================
 // ADMIN LOGIN CONFIG
 // ===========================
@@ -17,6 +18,5 @@ if (!defined('ADMIN_USER')) {
 }
 
 if (!defined('ADMIN_PASS_HASH')) {
-  // TEMP placeholder – ще го сменим след 2 минути с валиден hash
-  define('$2y$12$PIfrSLFIjTlPoB.iHmflSePdSQRHP1WQdaYJUcbg./SJFSb3i/wOS, '');
+  define('ADMIN_PASS_HASH', '$2y$12$PIfrSLFIjTlPoB.iHmflSePdSQRHP1WQdaYJUcbg./SJFSb3i/wOS');
 }
