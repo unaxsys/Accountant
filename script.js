@@ -229,8 +229,15 @@ async function wireReviewForm() {
     const fd = new FormData(form);
     try {
       const res = await fetch(apiUrl('/submit-review.php'), { method: "POST", body: fd });
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.message || "Грешка");
+      const rawText = await res.text();
+      let json = null;
+      try {
+        json = JSON.parse(rawText);
+      } catch (parseError) {
+        throw new Error('Сървърът върна невалиден отговор. Моля, опитайте отново по-късно.');
+      }
+
+      if (!res.ok || !json.ok) throw new Error(json.message || "Грешка");
 
       form.reset();
       if (msg) msg.textContent = json.message || "Готово!";
