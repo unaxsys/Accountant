@@ -1,6 +1,32 @@
 <?php
 require_once __DIR__ . '/../includes/blog_helpers.php';
 
+function normalize_heading_text(string $value): string
+{
+    $normalized = html_entity_decode(strip_tags($value), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $normalized = str_replace(["\xC2\xA0", '–', '—'], [' ', '-', '-'], $normalized);
+    $normalized = preg_replace('/\s+/u', ' ', $normalized) ?? $normalized;
+
+    return mb_strtolower(trim($normalized), 'UTF-8');
+}
+
+function strip_leading_duplicate_heading(string $contentHtml, string $title): string
+{
+    $pattern = '/^\s*<h([1-6])\b[^>]*>(.*?)<\/h\1>\s*/isu';
+    if (!preg_match($pattern, $contentHtml, $matches)) {
+        return $contentHtml;
+    }
+
+    $headingText = normalize_heading_text((string)($matches[2] ?? ''));
+    $titleText = normalize_heading_text($title);
+
+    if ($headingText !== $titleText) {
+        return $contentHtml;
+    }
+
+    return preg_replace($pattern, '', $contentHtml, 1) ?? $contentHtml;
+}
+
 $pdo = db();
 $base = base_url();
 
@@ -30,8 +56,9 @@ if (!empty($post['cover_image'])) {
     $ogImage = $base . '/' . ltrim((string)$post['cover_image'], '/');
 }
 
+$contentHtml = strip_leading_duplicate_heading((string)$post['content_html'], (string)$post['title']);
 $crumbs = breadcrumbs_for_post($post);
-$faq = extract_faq_from_html((string)$post['content_html']);
+$faq = extract_faq_from_html($contentHtml);
 
 $publishedIso = $post['published_at'] ? date('c', strtotime((string)$post['published_at'])) : date('c');
 $updatedIso = $post['updated_at'] ? date('c', strtotime((string)$post['updated_at'])) : $publishedIso;
@@ -129,6 +156,19 @@ if (!empty($faq)) {
 </header>
 
 <main class="blog-layout blog-layout--article">
+  <section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <p class="tag">СЧЕТОВОДСТВО ОТ НОВО ПОКОЛЕНИЕ</p>
+      <h1><?= h((string)$post['title']) ?></h1>
+      <p class="subtitle">Практични статии за ДДС, счетоводство и ТРЗ с ясен език и реални примери.</p>
+      <div class="hero-actions">
+        <a class="btn" href="/blog.php">Всички статии</a>
+        <a href="/#contact" class="btn btn-ghost">Вземи оферта до 24 часа</a>
+      </div>
+    </div>
+  </section>
+
   <a href="/blog.php" class="back-link">← Към всички статии</a>
 
   <article class="blog-article-card">
@@ -147,14 +187,13 @@ if (!empty($faq)) {
     <?php endif; ?>
 
     <p class="blog-date" style="margin-top:14px;">Публикувано: <?= h($post['published_at'] ? date('d.m.Y', strtotime((string)$post['published_at'])) : date('d.m.Y')) ?></p>
-    <h1><?= h((string)$post['title']) ?></h1>
 
     <?php if (!empty($post['excerpt'])): ?>
       <p class="blog-lead"><?= h((string)$post['excerpt']) ?></p>
     <?php endif; ?>
 
     <article class="blog-content">
-      <?= $post['content_html'] ?>
+      <?= $contentHtml ?>
     </article>
 
     <?php if (!empty($faq)): ?>
