@@ -311,7 +311,7 @@ render_site_header($title, $metaDescription, $canonicalUrl, 'article', $ogImage)
       <h1><?= e((string)($post['title'] ?? 'Статия')) ?></h1>
       <p class="subtitle">Практични статии за ДДС, счетоводство и ТРЗ с ясен език и реални примери.</p>
       <div class="hero-actions">
-        <a class="btn" href="/blog.php">Всички статии</a>
+        <a class="btn" href="/blog.php">← Към всички статии</a>
         <a href="/#contact" class="btn btn-ghost">Вземи оферта до 24 часа</a>
       </div>
     </div>
@@ -342,5 +342,10 @@ render_site_header($title, $metaDescription, $canonicalUrl, 'article', $ogImage)
       </div>
     </section>
   <?php endif; ?>
+
+  <section class="cta-strip">
+    <p>Имате казус? Пишете ни и ще получите отговор + оферта до 24 часа.</p>
+    <a class="btn" href="/#contact">Запитване</a>
+  </section>
 </main>
 <?php render_site_footer(); ?>

@@ -163,7 +163,7 @@ if (!empty($faq)) {
       <h1><?= h((string)$post['title']) ?></h1>
       <p class="subtitle">Практични статии за ДДС, счетоводство и ТРЗ с ясен език и реални примери.</p>
       <div class="hero-actions">
-        <a class="btn" href="/blog.php">Всички статии</a>
+        <a class="btn" href="/blog.php">← Към всички статии</a>
         <a href="/#contact" class="btn btn-ghost">Вземи оферта до 24 часа</a>
       </div>
     </div>
@@ -202,6 +202,11 @@ if (!empty($faq)) {
 
     <a href="/blog.php" class="back-link" style="margin-top:14px;">← Назад към статиите</a>
   </article>
+
+  <section class="cta-strip">
+    <p>Имате казус? Пишете ни и ще получите отговор + оферта до 24 часа.</p>
+    <a class="btn" href="/#contact">Запитване</a>
+  </section>
 </main>
 
 <script src="/script.js" defer></script>
