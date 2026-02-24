@@ -33,6 +33,32 @@ function is_valid_slug(string $slug): bool
     return (bool)preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug);
 }
 
+function request_slug(): string
+{
+    $slug = trim((string)($_GET['slug'] ?? ''));
+    if ($slug !== '') {
+        return $slug;
+    }
+
+    $path = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    $path = trim($path, '/');
+    if ($path === '') {
+        return '';
+    }
+
+    $parts = explode('/', $path);
+    $last = end($parts);
+    if (!is_string($last)) {
+        return '';
+    }
+
+    if ($last === 'blog' || $last === 'blog.php') {
+        return '';
+    }
+
+    return $last;
+}
+
 function post_timestamp(array $post): int
 {
     $date = isset($post['date']) ? (string)$post['date'] : '';
@@ -73,7 +99,12 @@ function find_related_posts(array $allPosts, array $currentPost, int $limit = 3)
     return array_map(static fn($item) => $item['post'], array_slice($scores, 0, $limit));
 }
 
-$slug = trim((string)($_GET['slug'] ?? ''));
+$slug = request_slug();
+if ($slug === '') {
+    header('Location: /blog/', true, 302);
+    exit;
+}
+
 if (!is_valid_slug($slug)) {
     http_response_code(404);
     echo 'Невалиден адрес на статия.';
@@ -98,10 +129,13 @@ if ($currentPost === null) {
 
 $post = $currentPost;
 $BASE_URL = BLOG_BASE_URL;
-$title = $post['seo_title'] ?: $post['title'];
-$metaDescription = $post['meta_description'];
-$canonicalUrl = $BASE_URL . '/blog/' . $post['slug'];
-$ogImage = $BASE_URL . '/' . $post['cover_image'];
+$title = (string)($post['seo_title'] ?? $post['title'] ?? 'Статия');
+$metaDescription = (string)($post['meta_description'] ?? $post['excerpt'] ?? '');
+$canonicalUrl = $BASE_URL . '/blog/' . (string)($post['slug'] ?? '');
+$coverImage = (string)($post['cover_image'] ?? '');
+$ogImage = str_starts_with($coverImage, 'http://') || str_starts_with($coverImage, 'https://')
+    ? $coverImage
+    : ($coverImage !== '' ? $BASE_URL . '/' . ltrim($coverImage, '/') : '');
 $excerpt = (string)($post['excerpt'] ?? '');
 $publishedTs = post_timestamp($post);
 $contentHtml = (string)($post['content_html'] ?? '<p>Съдържанието скоро ще бъде добавено.</p>');
@@ -119,7 +153,9 @@ $relatedPosts = find_related_posts($posts, $post, 3);
   <meta property="og:title" content="<?= htmlspecialchars($title) ?>">
   <meta property="og:description" content="<?= htmlspecialchars($metaDescription) ?>">
   <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
+  <?php if ($ogImage !== ""): ?>
   <meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
+  <?php endif; ?>
   <meta property="og:type" content="article">
 
   <script type="application/ld+json">
@@ -128,7 +164,9 @@ $relatedPosts = find_related_posts($posts, $post, 3);
   "@type": "Article",
   "headline": "<?= addslashes($post['title']) ?>",
   "description": "<?= addslashes($metaDescription) ?>",
+  <?php if ($ogImage !== ""): ?>
   "image": "<?= $ogImage ?>",
+  <?php endif; ?>
   "author": {
     "@type": "Organization",
     "name": "Магос ЕООД"
@@ -137,8 +175,8 @@ $relatedPosts = find_related_posts($posts, $post, 3);
     "@type": "Organization",
     "name": "Магос ЕООД"
   },
-  "datePublished": "<?= $post['published_at'] ?>",
-  "dateModified": "<?= $post['updated_at'] ?>"
+  "datePublished": "<?= e((string)($post['published_at'] ?? $post['date'] ?? date('Y-m-d'))) ?>",
+  "dateModified": "<?= e((string)($post['updated_at'] ?? $post['date'] ?? date('Y-m-d'))) ?>"
 }
 </script>
 
