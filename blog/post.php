@@ -149,7 +149,7 @@ if (!empty($faq)) {
   <nav class="main-nav" aria-label="Главно меню">
     <a href="/#services">Услуги</a>
     <a href="/#about">За нас</a>
-    <a href="/blog.php">Статии</a>
+    <a href="/statii/">Статии</a>
     <a href="/#contact">Контакт</a>
   </nav>
   <a class="btn btn-small" href="/#contact">Запитване</a>
@@ -163,19 +163,19 @@ if (!empty($faq)) {
       <h1><?= h((string)$post['title']) ?></h1>
       <p class="subtitle">Практични статии за ДДС, счетоводство и ТРЗ с ясен език и реални примери.</p>
       <div class="hero-actions">
-        <a class="btn" href="/blog.php">← Към всички статии</a>
+        <a class="btn" href="/statii/">← Към всички статии</a>
         <a href="/#contact" class="btn btn-ghost">Вземи оферта до 24 часа</a>
       </div>
     </div>
   </section>
 
-  <a href="/blog.php" class="back-link">← Към всички статии</a>
+  <a href="/statii/" class="back-link">← Към всички статии</a>
 
   <article class="blog-article-card">
     <nav class="crumbs" aria-label="Breadcrumb" style="font-size:13px; color:#556070; margin-bottom:10px;">
       <?php foreach ($crumbs as $i => $c): ?>
         <?php if ($i > 0): ?> / <?php endif; ?>
-        <?php $crumbHref = ((string)$c['name'] === 'Блог') ? '/blog.php' : (string)(parse_url((string)$c['url'], PHP_URL_PATH) ?: $c['url']); ?>
+        <?php $crumbHref = ((string)$c['name'] === 'Статии') ? '/statii/' : (string)(parse_url((string)$c['url'], PHP_URL_PATH) ?: $c['url']); ?>
         <a href="<?= h($crumbHref) ?>" style="color:#556070; text-decoration:none;"><?= h((string)$c['name']) ?></a>
       <?php endforeach; ?>
     </nav>
@@ -200,7 +200,7 @@ if (!empty($faq)) {
       <div class="faqHint" style="margin-top:18px; padding:12px 14px; border:1px solid #e7eef9; border-radius:14px; background:#fbfcff; color:#556070; font-size:13px;">Открит е FAQ блок в статията – автоматично добавихме FAQ schema (rich results).</div>
     <?php endif; ?>
 
-    <a href="/blog.php" class="back-link" style="margin-top:14px;">← Назад към статиите</a>
+    <a href="/statii/" class="back-link" style="margin-top:14px;">← Назад към статиите</a>
   </article>
 
   <section class="cta-strip">
