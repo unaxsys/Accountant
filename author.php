@@ -42,7 +42,7 @@ $authorJsonLd = [
       <h1 style="margin:0 0 6px; font-size:28px;"><?= h($authorName) ?></h1>
       <div class="muted" style="color:#556070;"><?= h($authorDesc) ?></div>
       <div class="muted" style="color:#556070; margin-top:10px;">
-        Контакт: <a href="/#contact">форма за контакт</a> · <a href="/blog/">към блога</a>
+        Контакт: <a href="/#contact">форма за контакт</a> · <a href="/statii/">към статиите</a>
       </div>
     </div>
 

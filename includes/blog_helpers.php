@@ -99,7 +99,7 @@ function breadcrumbs_for_post(array $post): array {
     $base = base_url();
     return [
         ['name' => 'Начало', 'url' => $base . '/'],
-        ['name' => 'Блог', 'url' => $base . '/blog/'],
+        ['name' => 'Статии', 'url' => $base . '/statii/'],
         ['name' => $post['title'] ?? 'Статия', 'url' => $base . '/blog/' . ($post['slug'] ?? '')],
     ];
 }

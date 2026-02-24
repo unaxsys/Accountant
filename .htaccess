@@ -9,6 +9,7 @@ DirectoryIndex index.html index.php
   RewriteEngine On
 
   # Canonical /statii
+  RewriteRule ^blog\.php$ /statii/ [R=301,L]
   RewriteRule ^statii$ /statii/ [R=301,L]
   RewriteRule ^statii/$ /statii/index.php [L,QSA]
   RewriteRule ^statii/([a-z0-9-]+)/?$ /statii/post.php?slug=$1 [L,QSA]
@@ -22,8 +23,8 @@ DirectoryIndex index.html index.php
   RewriteRule ^admin/posts/unpublish/?$ /admin/posts/unpublish.php [L,QSA]
 
   # SEO blog routes
-  RewriteRule ^blog$ /blog/ [R=301,L]
-  RewriteRule ^blog/$ /blog/index.php [L,QSA]
+  RewriteRule ^blog$ /statii/ [R=301,L]
+  RewriteRule ^blog/$ /statii/ [R=301,L]
   RewriteRule ^blog/([a-z0-9-]+)/?$ /blog/post.php?slug=$1 [L,QSA]
 
   # Blog sitemap endpoint

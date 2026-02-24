@@ -61,6 +61,7 @@ $pages = $pages ?? 1;
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
+    <link rel="canonical" href="https://magos.bg/statii/" />
 
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
@@ -157,7 +158,7 @@ $pages = $pages ?? 1;
         <?php endif; ?>
 
         <?php foreach ($articles as $a): ?>
-          <?php $href = '/statii/' . rawurlencode((string)$a['slug']); ?>
+          <?php $href = '/blog/' . rawurlencode((string)$a['slug']); ?>
           <article class="card service-card">
             <div>
               <p class="tag"><?= h(date('d.m.Y', strtotime((string)($a['published_at'] ?? $a['created_at'] ?? 'now')) ?: time())) ?></p>
