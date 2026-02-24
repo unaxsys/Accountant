@@ -129,6 +129,8 @@ if (!empty($faq)) {
   <?php endif; ?>
 
   <meta name="twitter:card" content="<?= $ogImage ? 'summary_large_image' : 'summary' ?>">
+  <link rel="icon" type="image/png" href="/tab-logo.png">
+  <link rel="apple-touch-icon" href="/tab-logo.png">
 
   <script type="application/ld+json"><?= json_encode($articleJsonLd, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
   <script type="application/ld+json"><?= jsonld_breadcrumbs($crumbs) ?></script>
@@ -194,8 +196,6 @@ if (!empty($faq)) {
     </div>
   </section>
 
-  <a href="/statii/" class="back-link">← Към всички статии</a>
-
   <article class="blog-article-card">
     <nav class="crumbs" aria-label="Breadcrumb" style="font-size:13px; color:#556070; margin-bottom:10px;">
       <?php foreach ($crumbs as $i => $c): ?>
@@ -225,7 +225,6 @@ if (!empty($faq)) {
       <div class="faqHint" style="margin-top:18px; padding:12px 14px; border:1px solid #e7eef9; border-radius:14px; background:#fbfcff; color:#556070; font-size:13px;">Открит е FAQ блок в статията – автоматично добавихме FAQ schema (rich results).</div>
     <?php endif; ?>
 
-    <a href="/statii/" class="back-link" style="margin-top:14px;">← Назад към статиите</a>
   </article>
 
   <section class="cta-strip">

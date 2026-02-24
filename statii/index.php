@@ -60,6 +60,8 @@ $pages = $pages ?? 1;
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
+    <link rel="icon" type="image/png" href="/tab-logo.png" />
+    <link rel="apple-touch-icon" href="/tab-logo.png" />
     <link rel="stylesheet" href="/styles.css" />
     <link rel="canonical" href="https://magos.bg/statii/" />
 

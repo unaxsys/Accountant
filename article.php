@@ -110,12 +110,12 @@ $relatedPosts = find_related_posts($pdo, $post, 3);
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/tab-logo.png">
+  <link rel="apple-touch-icon" href="/tab-logo.png">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
 <main class="blog-layout blog-layout--article">
-  <a href="/blog/" class="back-link">← Към всички статии</a>
-
   <article class="blog-article-card">
     <p class="blog-date"><?= e(date('d.m.Y', $publishedTs)) ?></p>
     <h1><?= e($title) ?></h1>
