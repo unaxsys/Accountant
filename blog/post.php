@@ -148,12 +148,37 @@ if (!empty($faq)) {
   <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Отвори меню" aria-expanded="false">☰</button>
   <nav class="main-nav" aria-label="Главно меню">
     <a href="/#services">Услуги</a>
+    <div class="nav-dropdown">
+      <button type="button" class="dropdown-toggle" aria-expanded="false">Решения ▾</button>
+      <div class="dropdown-menu">
+        <a href="/#process">Как започваме</a>
+        <a href="/#testimonials">Мнения</a>
+        <a href="/#faq">FAQ</a>
+      </div>
+    </div>
     <a href="/#about">За нас</a>
-    <a href="/blog.php">Статии</a>
+    <a href="/blog.php" aria-current="page">Статии</a>
     <a href="/#contact">Контакт</a>
   </nav>
   <a class="btn btn-small" href="/#contact">Запитване</a>
 </header>
+
+<aside class="mobile-drawer" id="mobile-drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <strong>Меню</strong>
+    <button class="drawer-close" id="drawer-close" aria-label="Затвори меню">✕</button>
+  </div>
+  <nav class="drawer-nav">
+    <a href="/#services">Услуги</a>
+    <a href="/#process">Как започваме</a>
+    <a href="/#testimonials">Мнения</a>
+    <a href="/#faq">FAQ</a>
+    <a href="/#about">За нас</a>
+    <a href="/blog.php" aria-current="page">Статии</a>
+    <a href="/#contact">Контакт</a>
+  </nav>
+</aside>
+<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
 
 <main class="blog-layout blog-layout--article">
   <section class="hero">
@@ -204,7 +229,7 @@ if (!empty($faq)) {
   </article>
 
   <section class="cta-strip">
-    <p>Имате казус? Пишете ни и ще получите отговор + оферта до 24 часа.</p>
+    <p>Пишете ни и ще получите оферта до 24 часа.</p>
     <a class="btn" href="/#contact">Запитване</a>
   </section>
 </main>
