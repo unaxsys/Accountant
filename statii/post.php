@@ -128,7 +128,7 @@ $coverAbs = $cover !== '' ? rtrim(SITE_URL, '/') . $cover : '';
     </section>
 
     <section class="cta-strip">
-      <p>Имате казус? Пишете ни и ще получите отговор + оферта до 24 часа.</p>
+      <p>Пишете ни и ще получите оферта до 24 часа.</p>
       <a class="btn" href="/#contact">Запитване</a>
     </section>
   </main>
