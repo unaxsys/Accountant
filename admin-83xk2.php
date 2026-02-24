@@ -4,6 +4,19 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/db.php';
 
+if (!defined('ADMIN_USER')) {
+  $adminUserFromEnv = getenv('ADMIN_USER');
+  define('ADMIN_USER', is_string($adminUserFromEnv) && $adminUserFromEnv !== '' ? $adminUserFromEnv : 'admin');
+}
+
+if (!defined('ADMIN_PASS_HASH')) {
+  $adminHashFromEnv = getenv('ADMIN_PASS_HASH');
+  if (!is_string($adminHashFromEnv) || $adminHashFromEnv === '') {
+    $adminHashFromEnv = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
+  }
+  define('ADMIN_PASS_HASH', $adminHashFromEnv);
+}
+
 session_start();
 
 $tab = (string)($_GET['tab'] ?? 'reviews');
