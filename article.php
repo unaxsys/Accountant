@@ -36,18 +36,16 @@ function find_related_posts(PDO $pdo, array $currentPost, int $limit = 3): array
   $currentTags = parse_tags((string)($currentPost['tags'] ?? ''));
   if ($currentTags === []) return [];
 
-  // Проста логика: търсим други публикувани статии със съвпадащи тагове (LIKE).
   $likes = [];
   $params = [];
   foreach ($currentTags as $t) {
     $likes[] = "tags LIKE ?";
     $params[] = '%' . $t . '%';
   }
-
   $params[] = (string)($currentPost['slug'] ?? '');
 
   $sql = "
-    SELECT title, slug, excerpt, seo_title, meta_description, tags, published_at, updated_at, created_at, content
+    SELECT title, slug, excerpt, seo_title, tags, published_at, created_at
     FROM articles
     WHERE status='published'
       AND (" . implode(' OR ', $likes) . ")
@@ -62,9 +60,6 @@ function find_related_posts(PDO $pdo, array $currentPost, int $limit = 3): array
 }
 
 $slug = trim((string)($_GET['slug'] ?? ''));
-
-// Ако отвориш /blog.php без slug — показваме същото съобщение,
-// но по-добре е да има rewrite към /blog/ (листинг). В т.2 ти давам .htaccess.
 if (!is_valid_slug($slug)) {
   http_response_code(404);
   echo 'Невалиден адрес на статия.';
@@ -73,13 +68,7 @@ if (!is_valid_slug($slug)) {
 
 $pdo = posts_pdo(true);
 
-// Вземаме статията от MySQL
-$stmt = $pdo->prepare("
-  SELECT *
-  FROM articles
-  WHERE slug = ? AND status='published'
-  LIMIT 1
-");
+$stmt = $pdo->prepare("SELECT * FROM articles WHERE slug=? AND status='published' LIMIT 1");
 $stmt->execute([$slug]);
 $post = $stmt->fetch();
 
@@ -90,23 +79,17 @@ if (!$post) {
 }
 
 $BASE_URL = BLOG_BASE_URL;
-
-// Пазим твоите променливи/логика, както си ги имал
 $title = (string)(($post['seo_title'] ?? '') ?: ($post['title'] ?? ''));
 $metaDescription = (string)($post['meta_description'] ?? '');
 $canonicalUrl = $BASE_URL . '/blog/' . (string)$post['slug'];
 
-// Ако нямаш cover_image в MySQL, нека да не чупи OG image
 $cover = (string)($post['cover_image'] ?? '');
 $ogImage = $cover !== '' ? ($BASE_URL . '/' . ltrim($cover, '/')) : ($BASE_URL . '/assets/og-default.jpg');
 
 $excerpt = (string)($post['excerpt'] ?? '');
 $publishedTs = post_timestamp_from_row($post);
-
-// content: в твоя admin таблица е "content" (не content_html)
-// Ако ти вкарваш HTML в content — показваме го 1:1.
-// Ако е plain text — можеш да го конвертираш, но за да пазим визията, оставяме както е.
 $contentHtml = (string)($post['content'] ?? '<p>Съдържанието скоро ще бъде добавено.</p>');
+
 $relatedPosts = find_related_posts($pdo, $post, 3);
 ?>
 <!doctype html>
@@ -123,26 +106,6 @@ $relatedPosts = find_related_posts($pdo, $post, 3);
   <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
   <meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
   <meta property="og:type" content="article">
-
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "<?= addslashes((string)($post['title'] ?? '')) ?>",
-  "description": "<?= addslashes($metaDescription) ?>",
-  "image": "<?= $ogImage ?>",
-  "author": {
-    "@type": "Organization",
-    "name": "Магос ЕООД"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Магос ЕООД"
-  },
-  "datePublished": "<?= addslashes((string)($post['published_at'] ?? '')) ?>",
-  "dateModified": "<?= addslashes((string)($post['updated_at'] ?? '')) ?>"
-}
-</script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
