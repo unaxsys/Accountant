@@ -494,7 +494,7 @@ try {
 /** ---------------- Data for view ---------------- */
 
 
-$pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY datetime(created_at) DESC")->fetchAll();
+$pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY created_at DESC")->fetchAll();
 
 /**
  * ✅ FIX: Robust ordering for approved_at, even if older rows used ISO 8601 (T + timezone)
@@ -505,11 +505,8 @@ $approved = $pdo->query("
   FROM reviews
   WHERE status='approved'
   ORDER BY
-    COALESCE(
-      datetime(approved_at),
-      datetime(replace(replace(approved_at,'T',' '),'+00:00',''))
-    ) DESC,
-    datetime(created_at) DESC
+    COALESCE(approved_at, created_at) DESC,
+    created_at DESC
   LIMIT 200
 ")->fetchAll();
 
