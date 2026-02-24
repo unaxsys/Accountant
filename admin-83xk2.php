@@ -244,16 +244,15 @@ if (!is_admin()) {
       .err{margin-top:10px;color:#b00020;font-size:13px}
       .note{margin-top:10px;color:#667;font-size:12px}
     </style>
-      <!-- Google tag (gtag.js) -->
+    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-NBCQS8P4KP');
     </script>
-</head>
+  </head>
   <body>
     <div class="wrap">
       <h1>Вход за администратор</h1>
@@ -268,10 +267,7 @@ if (!is_admin()) {
         <div class="note">Тази страница не е публично линкната.</div>
       </form>
     </div>
-  
-
-
-</body>
+  </body>
   </html>
   <?php
   exit;
@@ -295,8 +291,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($id > 0) {
       if ($action === 'approve') {
-        // ✅ FIX: store SQLite-friendly timestamp so sorting/filtering is always stable
-        $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at = datetime('now') WHERE id=:id");
+        // ✅ MariaDB/MySQL: NOW()
+        $stmt = $pdo->prepare("UPDATE reviews SET status='approved', approved_at = NOW() WHERE id=:id");
         $stmt->execute([':id' => $id]);
         redirect_with_msg('approved', 'Отзивът е одобрен.');
       }
@@ -310,32 +306,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       if ($action === 'update') {
         $name = trim((string)($_POST['name'] ?? ''));
         $company = trim((string)($_POST['company'] ?? ''));
-        $email = trim((string)($_POST['email'] ?? ''));
         $rating = (int)($_POST['rating'] ?? 5);
         $message = trim((string)($_POST['message'] ?? ''));
 
-        if ($name === '' || $email === '' || $message === '') {
-          redirect_with_msg('approved', 'Моля попълни: Име, Имейл и Отзив.');
+        if ($name === '' || $message === '') {
+          redirect_with_msg('approved', 'Моля попълни: Име и Отзив.');
         }
 
         if ($rating < 1) $rating = 1;
         if ($rating > 5) $rating = 5;
 
-        // length limits (safe even without mbstring)
+        // length limits
         $name = cut($name, 120);
-        $company = cut($company, 120);
-        $email = cut($email, 190);
+        $company = cut($company, 160);
         $message = cut($message, 2000);
 
+        // ✅ Table has NO email column; keep only existing columns
         $stmt = $pdo->prepare("
           UPDATE reviews
-          SET name=:name, company=:company, email=:email, rating=:rating, message=:message
+          SET name=:name, company=:company, rating=:rating, message=:message
           WHERE id=:id
         ");
         $stmt->execute([
           ':name' => $name,
           ':company' => $company,
-          ':email' => $email,
           ':rating' => $rating,
           ':message' => $message,
           ':id' => $id,
@@ -374,7 +368,6 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     if ($title === '' || $content === '') {
       throw new RuntimeException('Заглавие и съдържание са задължителни.');
     }
-
 
     $pdoPosts = posts_pdo();
     $slug = unique_post_slug($pdoPosts, slugify_post($slugIn !== '' ? $slugIn : $title), $postId > 0 ? $postId : null);
@@ -447,7 +440,6 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
   }
 }
 
-
 if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['action'] ?? ''), ['article_publish', 'article_unpublish'], true)) {
   if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
     http_response_code(400);
@@ -471,7 +463,6 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && in_array(($_POST['act
     $article_flash = $e->getMessage();
   }
 }
-
 
 if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'article_delete')) {
   if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
@@ -521,6 +512,7 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     $article_flash = $e->getMessage();
   }
 }
+
 if (is_admin() && isset($_GET['article_edit'])) {
   try {
     $id = (int)$_GET['article_edit'];
@@ -546,13 +538,8 @@ try {
 
 /** ---------------- Data for view ---------------- */
 
-
 $pending = $pdo->query("SELECT * FROM reviews WHERE status='pending' ORDER BY created_at DESC")->fetchAll();
 
-/**
- * ✅ FIX: Robust ordering for approved_at, even if older rows used ISO 8601 (T + timezone)
- * We normalize approved_at to SQLite datetime format for ordering.
- */
 $approved = $pdo->query("
   SELECT *
   FROM reviews
@@ -593,7 +580,6 @@ $msg = (string)($_GET['msg'] ?? '');
     .flash{max-width:1100px;margin:14px auto 0;padding:0 14px}
     .flash > div{background:#fff;border:1px solid #e6eaf2;border-radius:14px;padding:12px 14px;box-shadow:0 10px 24px rgba(0,0,0,.05)}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
     label{display:block;font-size:12px;color:#334;margin-top:10px}
     input, textarea, select{width:100%;padding:10px 12px;border:1px solid #d9e1ef;border-radius:10px;margin-top:6px;font:inherit}
     textarea{min-height:110px;resize:vertical}
@@ -611,15 +597,14 @@ $msg = (string)($_GET['msg'] ?? '');
     .seo-preview .d{color:#4d5156;font-size:13px;margin-top:6px;line-height:1.4}
     .seo-preview .hint{color:#667;font-size:12px;margin-top:8px}
   </style>
-    <!-- Google tag  (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-NBCQS8P4KP');
-    </script>
+  <!-- Google tag  (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NBCQS8P4KP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-NBCQS8P4KP');
+  </script>
 </head>
 <body>
 <header>
@@ -649,7 +634,6 @@ $msg = (string)($_GET['msg'] ?? '');
         <div class="meta">
           <div><strong><?= h($r['name']) ?></strong><?= $r['company'] ? ' — ' . h($r['company']) : '' ?></div>
           <div class="stars"><?= str_repeat('★', (int)$r['rating']) . str_repeat('☆', 5-(int)$r['rating']) ?></div>
-          <div><?= h($r['email'] ?? '') ?></div>
           <div><?= h($r['created_at']) ?></div>
         </div>
         <div class="msg"><?= h($r['message']) ?></div>
@@ -723,11 +707,7 @@ $msg = (string)($_GET['msg'] ?? '');
               </div>
             </div>
 
-            <div class="row3">
-              <div>
-                <label>Имейл *</label>
-                <input name="email" type="email" required value="<?= h($r['email'] ?? '') ?>">
-              </div>
+            <div class="row">
               <div>
                 <label>Оценка *</label>
                 <select name="rating" required>
@@ -950,7 +930,6 @@ $msg = (string)($_GET['msg'] ?? '');
     return s.slice(0, Math.max(0, max - 1)).trim() + '…';
   }
 
-  // mark fields as "touched" only if user edits them manually
   function markTouched(el){
     if (!el) return;
     el.addEventListener('input', () => { el.dataset.touched = '1'; }, { passive: true });
@@ -964,20 +943,17 @@ $msg = (string)($_GET['msg'] ?? '');
   markTouched(tags);
   markTouched(excerpt);
 
-  // auto-fill helpers (only when empty + not touched)
   function autoFillIfEmpty(el, value){
     if (!el) return;
     const cur = (el.value || '').trim();
     const touched = el.dataset.touched === '1';
     if (!touched && cur === '' && (value || '').trim() !== '') {
       el.value = value;
-      // don't mark touched; it's system fill
       el.dispatchEvent(new Event('change', { bubbles: true }));
     }
   }
 
   function getSuggestedMeta(){
-    // prefer excerpt, else first 160 chars from content text
     const ex = (excerpt?.value || '').trim();
     if (ex) return smartTruncate(ex.replace(/\s+/g,' '), 160);
 
@@ -989,7 +965,6 @@ $msg = (string)($_GET['msg'] ?? '');
     const t = (title?.value || '').trim();
     const kw = (keyword?.value || '').trim();
 
-    // slug from title (if slug not touched)
     if (title && slug && slug.dataset.touched !== '1') {
       const s = toSlug(title.value);
       if ((slug.value || '').trim() === '' || toSlug(slug.value) === toSlug(slug.value)) {
@@ -998,13 +973,9 @@ $msg = (string)($_GET['msg'] ?? '');
       }
     }
 
-    // seo_title defaults to title
     autoFillIfEmpty(seoTitle, t);
-
-    // meta_description defaults from excerpt/content
     autoFillIfEmpty(meta, getSuggestedMeta());
 
-    // cover_alt defaults to "KW – Title" or Title
     const alt = kw ? `${kw} – ${t}` : t;
     autoFillIfEmpty(coverAlt, smartTruncate(alt, 160));
   }
@@ -1082,7 +1053,6 @@ $msg = (string)($_GET['msg'] ?? '');
     renderPreview();
   }
 
-  // title -> slug if not touched (your existing behavior)
   if (title && slug) {
     title.addEventListener('input',()=>{ if(!slug.dataset.touched){ slug.value=toSlug(title.value); } run(); });
     slug.addEventListener('input',()=>{ slug.dataset.touched='1'; run(); });
@@ -1099,7 +1069,6 @@ $msg = (string)($_GET['msg'] ?? '');
     editor?.addEventListener(ev, run);
   });
 
-  // remaining counters
   attachRemainingCounter(title, 'title_remaining');
   attachRemainingCounter(slug, 'slug_remaining');
   attachRemainingCounter(seoTitle, 'seo_title_remaining');
@@ -1109,7 +1078,6 @@ $msg = (string)($_GET['msg'] ?? '');
   attachRemainingCounter(tags, 'tags_remaining');
   attachRemainingCounter(coverAlt, 'cover_alt_remaining');
 
-  // soft warnings on submit (non-blocking, confirm only)
   if (form) {
     form.addEventListener('submit', (e) => {
       const t = (title?.value || '').trim();
@@ -1122,7 +1090,6 @@ $msg = (string)($_GET['msg'] ?? '');
       if (md.length < 120 || md.length > 160) problems.push(`Meta Description е ${md.length} символа (препоръка: 120–160).`);
       if (!keyword?.value?.trim()) problems.push('Focus keyword е празно (препоръчително).');
 
-      // If too much over the limit, ask confirm
       if (problems.length) {
         const msg =
           "Има SEO предупреждения:\n\n- " + problems.join("\n- ") +
@@ -1137,7 +1104,6 @@ $msg = (string)($_GET['msg'] ?? '');
     });
   }
 
-  // tinymce support (if present)
   document.addEventListener('tinymce-editor-init', run);
   setInterval(run, 1200);
   run();
