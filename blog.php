@@ -1,113 +1,145 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/includes/db.php';
-require_once __DIR__ . '/includes/config.php';
-
+const BLOG_DATA_FILE = __DIR__ . '/data/posts.json';
 const BLOG_BASE_URL = 'https://magos.bg';
 
-function e(string $value): string {
-  return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+function e(string $value): string
+{
+    return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
-function is_valid_slug(string $slug): bool {
-  return (bool)preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug);
+function load_posts(): array
+{
+    if (!is_file(BLOG_DATA_FILE)) {
+        return [];
+    }
+
+    $raw = file_get_contents(BLOG_DATA_FILE);
+    if ($raw === false) {
+        return [];
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return [];
+    }
+
+    return array_values(array_filter($decoded, static fn($post) => is_array($post) && !empty($post['slug'])));
 }
 
-function post_timestamp_from_row(array $row): int {
-  $date = (string)($row['published_at'] ?? '');
-  if ($date === '') $date = (string)($row['created_at'] ?? '');
-  $ts = strtotime($date);
-  return $ts !== false ? $ts : time();
+function is_valid_slug(string $slug): bool
+{
+    return (bool)preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $slug);
 }
 
-function parse_tags(?string $tags): array {
-  if ($tags === null) return [];
-  $parts = preg_split('/[,\s]+/', $tags) ?: [];
-  $out = [];
-  foreach ($parts as $t) {
-    $t = trim(mb_strtolower($t));
-    if ($t !== '') $out[] = $t;
-  }
-  return array_values(array_unique($out));
+function request_slug(): string
+{
+    $slug = trim((string)($_GET['slug'] ?? ''));
+    if ($slug !== '') {
+        return $slug;
+    }
+
+    $path = (string)parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    $path = trim($path, '/');
+    if ($path === '') {
+        return '';
+    }
+
+    $parts = explode('/', $path);
+    $last = end($parts);
+    if (!is_string($last)) {
+        return '';
+    }
+
+    if ($last === 'blog' || $last === 'blog.php') {
+        return '';
+    }
+
+    return $last;
 }
 
-function find_related_posts(PDO $pdo, array $currentPost, int $limit = 3): array {
-  $currentTags = parse_tags((string)($currentPost['tags'] ?? ''));
-  if ($currentTags === []) return [];
-
-  // Проста логика: търсим други публикувани статии със съвпадащи тагове (LIKE).
-  $likes = [];
-  $params = [];
-  foreach ($currentTags as $t) {
-    $likes[] = "tags LIKE ?";
-    $params[] = '%' . $t . '%';
-  }
-
-  $params[] = (string)($currentPost['slug'] ?? '');
-
-  $sql = "
-    SELECT title, slug, excerpt, seo_title, meta_description, tags, published_at, updated_at, created_at, content
-    FROM articles
-    WHERE status='published'
-      AND (" . implode(' OR ', $likes) . ")
-      AND slug <> ?
-    ORDER BY COALESCE(published_at, created_at) DESC
-    LIMIT " . (int)$limit . "
-  ";
-
-  $st = $pdo->prepare($sql);
-  $st->execute($params);
-  return $st->fetchAll() ?: [];
+function post_timestamp(array $post): int
+{
+    $date = isset($post['date']) ? (string)$post['date'] : '';
+    $ts = strtotime($date);
+    return $ts !== false ? $ts : time();
 }
 
-$slug = trim((string)($_GET['slug'] ?? ''));
+function find_related_posts(array $allPosts, array $currentPost, int $limit = 3): array
+{
+    $currentTags = array_values(array_filter($currentPost['tags'] ?? [], 'is_string'));
+    if ($currentTags === []) {
+        return [];
+    }
 
-// Ако отвориш /blog.php без slug — показваме същото съобщение,
-// но по-добре е да има rewrite към /blog/ (листинг). В т.2 ти давам .htaccess.
+    $scores = [];
+    foreach ($allPosts as $candidate) {
+        if (($candidate['slug'] ?? '') === ($currentPost['slug'] ?? '')) {
+            continue;
+        }
+
+        $candidateTags = array_values(array_filter($candidate['tags'] ?? [], 'is_string'));
+        $common = array_intersect($currentTags, $candidateTags);
+        if ($common === []) {
+            continue;
+        }
+
+        $scores[] = [
+            'score' => count($common),
+            'date' => post_timestamp($candidate),
+            'post' => $candidate,
+        ];
+    }
+
+    usort($scores, static function (array $a, array $b): int {
+        return [$b['score'], $b['date']] <=> [$a['score'], $a['date']];
+    });
+
+    return array_map(static fn($item) => $item['post'], array_slice($scores, 0, $limit));
+}
+
+$slug = request_slug();
+if ($slug === '') {
+    header('Location: /blog/', true, 302);
+    exit;
+}
+
 if (!is_valid_slug($slug)) {
-  http_response_code(404);
-  echo 'Невалиден адрес на статия.';
-  exit;
+    http_response_code(404);
+    echo 'Невалиден адрес на статия.';
+    exit;
 }
 
-$pdo = posts_pdo(true);
+$posts = load_posts();
+$currentPost = null;
 
-// Вземаме статията от MySQL
-$stmt = $pdo->prepare("
-  SELECT *
-  FROM articles
-  WHERE slug = ? AND status='published'
-  LIMIT 1
-");
-$stmt->execute([$slug]);
-$post = $stmt->fetch();
-
-if (!$post) {
-  http_response_code(404);
-  echo 'Статията не е намерена.';
-  exit;
+foreach ($posts as $post) {
+    if (($post['slug'] ?? '') === $slug) {
+        $currentPost = $post;
+        break;
+    }
 }
 
+if ($currentPost === null) {
+    http_response_code(404);
+    echo 'Статията не е намерена.';
+    exit;
+}
+
+$post = $currentPost;
 $BASE_URL = BLOG_BASE_URL;
-
-// Пазим твоите променливи/логика, както си ги имал
-$title = (string)(($post['seo_title'] ?? '') ?: ($post['title'] ?? ''));
-$metaDescription = (string)($post['meta_description'] ?? '');
-$canonicalUrl = $BASE_URL . '/blog/' . (string)$post['slug'];
-
-// Ако нямаш cover_image в MySQL, нека да не чупи OG image
-$cover = (string)($post['cover_image'] ?? '');
-$ogImage = $cover !== '' ? ($BASE_URL . '/' . ltrim($cover, '/')) : ($BASE_URL . '/assets/og-default.jpg');
-
+$title = (string)($post['seo_title'] ?? $post['title'] ?? 'Статия');
+$metaDescription = (string)($post['meta_description'] ?? $post['excerpt'] ?? '');
+$canonicalUrl = $BASE_URL . '/blog/' . (string)($post['slug'] ?? '');
+$coverImage = (string)($post['cover_image'] ?? '');
+$ogImage = str_starts_with($coverImage, 'http://') || str_starts_with($coverImage, 'https://')
+    ? $coverImage
+    : ($coverImage !== '' ? $BASE_URL . '/' . ltrim($coverImage, '/') : '');
 $excerpt = (string)($post['excerpt'] ?? '');
-$publishedTs = post_timestamp_from_row($post);
-
-// content: в твоя admin таблица е "content" (не content_html)
-// Ако ти вкарваш HTML в content — показваме го 1:1.
-// Ако е plain text — можеш да го конвертираш, но за да пазим визията, оставяме както е.
-$contentHtml = (string)($post['content'] ?? '<p>Съдържанието скоро ще бъде добавено.</p>');
-$relatedPosts = find_related_posts($pdo, $post, 3);
+$publishedTs = post_timestamp($post);
+$contentHtml = (string)($post['content_html'] ?? '<p>Съдържанието скоро ще бъде добавено.</p>');
+$relatedPosts = find_related_posts($posts, $post, 3);
 ?>
 <!doctype html>
 <html lang="bg">
@@ -121,16 +153,20 @@ $relatedPosts = find_related_posts($pdo, $post, 3);
   <meta property="og:title" content="<?= htmlspecialchars($title) ?>">
   <meta property="og:description" content="<?= htmlspecialchars($metaDescription) ?>">
   <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
+  <?php if ($ogImage !== ""): ?>
   <meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
+  <?php endif; ?>
   <meta property="og:type" content="article">
 
   <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "Article",
-  "headline": "<?= addslashes((string)($post['title'] ?? '')) ?>",
+  "headline": "<?= addslashes($post['title']) ?>",
   "description": "<?= addslashes($metaDescription) ?>",
+  <?php if ($ogImage !== ""): ?>
   "image": "<?= $ogImage ?>",
+  <?php endif; ?>
   "author": {
     "@type": "Organization",
     "name": "Магос ЕООД"
@@ -139,8 +175,8 @@ $relatedPosts = find_related_posts($pdo, $post, 3);
     "@type": "Organization",
     "name": "Магос ЕООД"
   },
-  "datePublished": "<?= addslashes((string)($post['published_at'] ?? '')) ?>",
-  "dateModified": "<?= addslashes((string)($post['updated_at'] ?? '')) ?>"
+  "datePublished": "<?= e((string)($post['published_at'] ?? $post['date'] ?? date('Y-m-d'))) ?>",
+  "dateModified": "<?= e((string)($post['updated_at'] ?? $post['date'] ?? date('Y-m-d'))) ?>"
 }
 </script>
 
@@ -169,7 +205,7 @@ $relatedPosts = find_related_posts($pdo, $post, 3);
       <div class="blog-grid">
         <?php foreach ($relatedPosts as $related): ?>
           <a class="blog-card" href="/blog/<?= e((string)$related['slug']) ?>">
-            <p class="blog-card__date"><?= e(date('d.m.Y', post_timestamp_from_row($related))) ?></p>
+            <p class="blog-card__date"><?= e(date('d.m.Y', post_timestamp($related))) ?></p>
             <h3><?= e((string)($related['title'] ?? 'Статия')) ?></h3>
             <p><?= e((string)($related['excerpt'] ?? '')) ?></p>
           </a>
