@@ -25,7 +25,10 @@ function load_posts(): array
         return [];
     }
 
-    return array_values(array_filter($decoded, static fn($post) => is_array($post) && !empty($post['slug'])));
+    $posts = array_values(array_filter($decoded, static fn($post) => is_array($post) && !empty($post['slug'])));
+    usort($posts, static fn(array $a, array $b): int => post_timestamp($b) <=> post_timestamp($a));
+
+    return $posts;
 }
 
 function is_valid_slug(string $slug): bool
@@ -48,11 +51,7 @@ function request_slug(): string
 
     $parts = explode('/', $path);
     $last = end($parts);
-    if (!is_string($last)) {
-        return '';
-    }
-
-    if ($last === 'blog' || $last === 'blog.php') {
+    if (!is_string($last) || $last === 'blog' || $last === 'blog.php') {
         return '';
     }
 
@@ -61,7 +60,7 @@ function request_slug(): string
 
 function post_timestamp(array $post): int
 {
-    $date = isset($post['date']) ? (string)$post['date'] : '';
+    $date = (string)($post['published_at'] ?? $post['date'] ?? '');
     $ts = strtotime($date);
     return $ts !== false ? $ts : time();
 }
@@ -99,9 +98,127 @@ function find_related_posts(array $allPosts, array $currentPost, int $limit = 3)
     return array_map(static fn($item) => $item['post'], array_slice($scores, 0, $limit));
 }
 
+function cover_image_url(array $post): string
+{
+    $coverImage = (string)($post['cover_image'] ?? '');
+    if ($coverImage === '') {
+        return '';
+    }
+
+    if (str_starts_with($coverImage, 'http://') || str_starts_with($coverImage, 'https://')) {
+        return $coverImage;
+    }
+
+    return BLOG_BASE_URL . '/' . ltrim($coverImage, '/');
+}
+
+function render_site_header(string $title, string $description, string $canonicalUrl, string $ogType = 'website', string $ogImage = ''): void
+{
+    ?>
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><?= e($title) ?></title>
+  <meta name="description" content="<?= e($description) ?>">
+  <link rel="canonical" href="<?= e($canonicalUrl) ?>">
+  <meta property="og:title" content="<?= e($title) ?>">
+  <meta property="og:description" content="<?= e($description) ?>">
+  <meta property="og:url" content="<?= e($canonicalUrl) ?>">
+  <?php if ($ogImage !== ''): ?>
+  <meta property="og:image" content="<?= e($ogImage) ?>">
+  <?php endif; ?>
+  <meta property="og:type" content="<?= e($ogType) ?>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/tab-logo.png">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<a href="/" class="corner-logo" aria-label="Магос ЕООД начало">
+  <span class="logo-mark" aria-hidden="true">
+    <img src="/magos-logo.png" alt="Магос ЕООД" onerror="this.onerror=null;this.src='/magos-logo.svg';">
+  </span>
+</a>
+
+<header class="site-header" id="site-header">
+  <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Отвори меню" aria-expanded="false">☰</button>
+  <nav class="main-nav" aria-label="Главно меню">
+    <a href="/#services">Услуги</a>
+    <a href="/#about">За нас</a>
+    <a href="/blog.php">Статии</a>
+    <a href="/#contact">Контакт</a>
+  </nav>
+  <a class="btn btn-small" href="/#contact">Запитване</a>
+</header>
+<?php
+}
+
+function render_site_footer(): void
+{
+    ?>
+<script src="/script.js" defer></script>
+</body>
+</html>
+<?php
+}
+
+$posts = load_posts();
 $slug = request_slug();
+
 if ($slug === '') {
-    header('Location: /blog/', true, 302);
+    render_site_header(
+        'Блог | Магос ЕООД',
+        'Практични статии за счетоводство, ДДС и ТРЗ от Магос ЕООД.',
+        BLOG_BASE_URL . '/blog/',
+        'website'
+    );
+    ?>
+<main>
+  <section class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <p class="tag">СЧЕТОВОДСТВО ОТ НОВО ПОКОЛЕНИЕ</p>
+      <h1>Финансова яснота за смелия бизнес.</h1>
+      <p class="subtitle">Практични статии за ДДС, счетоводство и ТРЗ с ясен език и реални примери.</p>
+      <div class="hero-actions">
+        <a class="btn" href="#blog-list">Виж статиите</a>
+        <a href="/#contact" class="btn btn-ghost">Вземи оферта до 24 часа</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="stats">
+    <article><h3>Оферта до 24 ч.</h3><p>бърз старт без губене на време</p></article>
+    <article><h3>Ясни срокове</h3><p>контрол на ДДС и задължения към НАП</p></article>
+    <article><h3>Персонален контакт</h3><p>директна връзка, без “прехвърляния”</p></article>
+  </section>
+
+  <section class="blog-layout" id="blog-list">
+    <div class="blog-grid">
+      <?php foreach ($posts as $p): ?>
+        <?php
+          $url = '/blog/' . e((string)$p['slug']);
+          $date = date('d.m.Y', post_timestamp($p));
+          $excerpt = (string)($p['excerpt'] ?? '');
+          $image = cover_image_url($p);
+        ?>
+        <a class="blog-card" href="<?= $url ?>">
+          <?php if ($image !== ''): ?>
+            <img src="<?= e($image) ?>" alt="<?= e((string)($p['title'] ?? 'Статия')) ?>" style="width:100%;height:180px;object-fit:cover;border-radius:12px;margin-bottom:12px;">
+          <?php endif; ?>
+          <p class="blog-card__date"><?= e($date) ?></p>
+          <h2><?= e((string)($p['title'] ?? 'Статия')) ?></h2>
+          <p><?= e($excerpt) ?></p>
+        </a>
+      <?php endforeach; ?>
+    </div>
+  </section>
+</main>
+<?php
+    render_site_footer();
     exit;
 }
 
@@ -111,9 +228,7 @@ if (!is_valid_slug($slug)) {
     exit;
 }
 
-$posts = load_posts();
 $currentPost = null;
-
 foreach ($posts as $post) {
     if (($post['slug'] ?? '') === $slug) {
         $currentPost = $post;
@@ -128,66 +243,19 @@ if ($currentPost === null) {
 }
 
 $post = $currentPost;
-$BASE_URL = BLOG_BASE_URL;
 $title = (string)($post['seo_title'] ?? $post['title'] ?? 'Статия');
 $metaDescription = (string)($post['meta_description'] ?? $post['excerpt'] ?? '');
-$canonicalUrl = $BASE_URL . '/blog/' . (string)($post['slug'] ?? '');
-$coverImage = (string)($post['cover_image'] ?? '');
-$ogImage = str_starts_with($coverImage, 'http://') || str_starts_with($coverImage, 'https://')
-    ? $coverImage
-    : ($coverImage !== '' ? $BASE_URL . '/' . ltrim($coverImage, '/') : '');
+$canonicalUrl = BLOG_BASE_URL . '/blog/' . (string)($post['slug'] ?? '');
+$ogImage = cover_image_url($post);
 $excerpt = (string)($post['excerpt'] ?? '');
 $publishedTs = post_timestamp($post);
 $contentHtml = (string)($post['content_html'] ?? '<p>Съдържанието скоро ще бъде добавено.</p>');
 $relatedPosts = find_related_posts($posts, $post, 3);
+
+render_site_header($title, $metaDescription, $canonicalUrl, 'article', $ogImage);
 ?>
-<!doctype html>
-<html lang="bg">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><?= htmlspecialchars($title) ?></title>
-  <meta name="description" content="<?= htmlspecialchars($metaDescription) ?>">
-  <link rel="canonical" href="<?= htmlspecialchars($canonicalUrl) ?>">
-
-  <meta property="og:title" content="<?= htmlspecialchars($title) ?>">
-  <meta property="og:description" content="<?= htmlspecialchars($metaDescription) ?>">
-  <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl) ?>">
-  <?php if ($ogImage !== ""): ?>
-  <meta property="og:image" content="<?= htmlspecialchars($ogImage) ?>">
-  <?php endif; ?>
-  <meta property="og:type" content="article">
-
-  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Article",
-  "headline": "<?= addslashes($post['title']) ?>",
-  "description": "<?= addslashes($metaDescription) ?>",
-  <?php if ($ogImage !== ""): ?>
-  "image": "<?= $ogImage ?>",
-  <?php endif; ?>
-  "author": {
-    "@type": "Organization",
-    "name": "Магос ЕООД"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Магос ЕООД"
-  },
-  "datePublished": "<?= e((string)($post['published_at'] ?? $post['date'] ?? date('Y-m-d'))) ?>",
-  "dateModified": "<?= e((string)($post['updated_at'] ?? $post['date'] ?? date('Y-m-d'))) ?>"
-}
-</script>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
-</head>
-<body>
 <main class="blog-layout blog-layout--article">
-  <a href="/blog/" class="back-link">← Към всички статии</a>
+  <a href="/blog.php" class="back-link">← Към всички статии</a>
 
   <article class="blog-article-card">
     <p class="blog-date"><?= e(date('d.m.Y', $publishedTs)) ?></p>
@@ -214,5 +282,4 @@ $relatedPosts = find_related_posts($posts, $post, 3);
     </section>
   <?php endif; ?>
 </main>
-</body>
-</html>
+<?php render_site_footer(); ?>
