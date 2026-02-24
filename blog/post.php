@@ -111,33 +111,48 @@ if (!empty($faq)) {
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <div class="wrap" style="max-width:860px; margin:0 auto; padding:22px 16px 60px;">
-    <nav class="crumbs" aria-label="Breadcrumb" style="font-size:13px; color:#556070; margin-bottom:14px;">
+<a href="/" class="corner-logo" aria-label="Магос ЕООД начало">
+  <span class="logo-mark" aria-hidden="true">
+    <img src="/magos-logo.png" alt="Магос ЕООД" onerror="this.onerror=null;this.src='/magos-logo.svg';">
+  </span>
+</a>
+
+<header class="site-header" id="site-header">
+  <button class="menu-toggle" id="menu-toggle" type="button" aria-label="Отвори меню" aria-expanded="false">☰</button>
+  <nav class="main-nav" aria-label="Главно меню">
+    <a href="/#services">Услуги</a>
+    <a href="/#about">За нас</a>
+    <a href="/blog.php">Статии</a>
+    <a href="/#contact">Контакт</a>
+  </nav>
+  <a class="btn btn-small" href="/#contact">Запитване</a>
+</header>
+
+<main class="blog-layout blog-layout--article">
+  <a href="/blog/" class="back-link">← Към всички статии</a>
+
+  <article class="blog-article-card">
+    <nav class="crumbs" aria-label="Breadcrumb" style="font-size:13px; color:#556070; margin-bottom:10px;">
       <?php foreach ($crumbs as $i => $c): ?>
         <?php if ($i > 0): ?> / <?php endif; ?>
         <a href="<?= h((string)(parse_url((string)$c['url'], PHP_URL_PATH) ?: $c['url'])) ?>" style="color:#556070; text-decoration:none;"><?= h((string)$c['name']) ?></a>
       <?php endforeach; ?>
     </nav>
 
-    <div style="margin:0 0 14px;">
-      <a href="/blog/" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid #d7e2f3; border-radius:12px; background:#fff; color:#1f3f75; font-weight:700; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,.05);">← Назад към статиите</a>
-    </div>
+    <?php if ($ogImage): ?>
+      <img src="<?= h($ogImage) ?>" alt="<?= h((string)($post['cover_alt'] ?: $post['title'])) ?>" style="width:100%; height:320px; object-fit:cover; display:block; background:#f3f6ff; border-radius:14px;">
+    <?php else: ?>
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='600'%3E%3Crect width='1200' height='600' fill='%23f3f6ff'/%3E%3C/svg%3E" alt="<?= h((string)$post['title']) ?>" style="width:100%; height:320px; object-fit:cover; display:block; background:#f3f6ff; border-radius:14px;">
+    <?php endif; ?>
 
-    <div class="hero" style="border:1px solid #e7eef9; border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.07); background:#fff;">
-      <?php if ($ogImage): ?>
-        <img src="<?= h($ogImage) ?>" alt="<?= h((string)($post['cover_alt'] ?: $post['title'])) ?>" style="width:100%; height:320px; object-fit:cover; display:block; background:#f3f6ff;">
-      <?php else: ?>
-        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='600'%3E%3Crect width='1200' height='600' fill='%23f3f6ff'/%3E%3C/svg%3E" alt="<?= h((string)$post['title']) ?>" style="width:100%; height:320px; object-fit:cover; display:block; background:#f3f6ff;">
-      <?php endif; ?>
-    </div>
+    <p class="blog-date" style="margin-top:14px;">Публикувано: <?= h($post['published_at'] ? date('d.m.Y', strtotime((string)$post['published_at'])) : date('d.m.Y')) ?></p>
+    <h1><?= h((string)$post['title']) ?></h1>
 
-    <h1 style="font-size:34px; line-height:1.1; margin:16px 0 6px;"><?= h((string)$post['title']) ?></h1>
-    <div class="meta" style="color:#556070; font-size:13px; margin-bottom:12px;">
-      Публикувано: <?= h($post['published_at'] ? date('d.m.Y', strtotime((string)$post['published_at'])) : date('d.m.Y')) ?>
-      · Автор: <a href="/author.php"><?= h($authorName) ?></a>
-    </div>
+    <?php if (!empty($post['excerpt'])): ?>
+      <p class="blog-lead"><?= h((string)$post['excerpt']) ?></p>
+    <?php endif; ?>
 
-    <article class="content" style="line-height:1.7; font-size:16px;">
+    <article class="blog-content">
       <?= $post['content_html'] ?>
     </article>
 
@@ -145,17 +160,10 @@ if (!empty($faq)) {
       <div class="faqHint" style="margin-top:18px; padding:12px 14px; border:1px solid #e7eef9; border-radius:14px; background:#fbfcff; color:#556070; font-size:13px;">Открит е FAQ блок в статията – автоматично добавихме FAQ schema (rich results).</div>
     <?php endif; ?>
 
-    <div style="margin-top:18px;">
-      <a href="/blog/" style="display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border:1px solid #d7e2f3; border-radius:12px; background:#fff; color:#1f3f75; font-weight:700; text-decoration:none; box-shadow:0 4px 12px rgba(0,0,0,.05);">← Назад към статиите</a>
-    </div>
+    <a href="/blog/" class="back-link" style="margin-top:14px;">← Назад към статиите</a>
+  </article>
+</main>
 
-    <div class="authorbox" style="margin-top:28px; border-top:1px solid #e7eef9; padding-top:16px; display:flex; gap:12px; align-items:flex-start;">
-      <div class="avatar" style="width:44px; height:44px; border-radius:12px; background:#f3f6ff; display:flex; align-items:center; justify-content:center; font-weight:800;">M</div>
-      <div>
-        <strong><a href="/author.php" style="color:#111;"><?= h($authorName) ?></a></strong><br>
-        <span style="color:#556070;">Счетоводство, ДДС и ТРЗ. Практични насоки и актуални промени.</span>
-      </div>
-    </div>
-  </div>
+<script src="/script.js" defer></script>
 </body>
 </html>
