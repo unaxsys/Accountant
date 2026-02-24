@@ -6,7 +6,7 @@ define('ADMIN_USER', 'admin');
 
 // ✅ СМЕНИ паролата: по подразбиране е "ChangeMe_123!"
 // Ако искаш нова парола, кажи ми и ще ти дам нов hash.
-define('ADMIN_PASS_HASH', '$2y$10$qQ3WtRKA4HIHsNM/m7RCOOPzeKxxedSkxe9a9AktWUidyJbl.ddv.');
+define('ADMIN_PASS_HASH', '$2y$10$nELormfujlVq.nNo93rFm.aGI2XTYqycqITuMtMtOEZiBQZfN5J5C');
 
 // SQLite файл (ще се създаде автоматично)
 define('DB_PATH', __DIR__ . '/db.sqlite');
