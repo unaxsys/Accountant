@@ -36,27 +36,37 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
   exit;
 }
 
-$pdo = db();
-$stmt = $pdo->prepare("
-  INSERT INTO reviews (name, company, email, rating, message, status, created_at, ip, user_agent)
-  VALUES (:name, :company, :email, :rating, :message, 'pending', :created_at, :ip, :ua)
-");
-$stmt->execute([
-  ':name' => $name,
-  ':company' => $company ?: null,
-  ':email' => $email,
-  ':rating' => $rating,
-  ':message' => $message,
-  ':created_at' => gmdate('c'),
-  ':ip' => $_SERVER['REMOTE_ADDR'] ?? null,
-  ':ua' => $_SERVER['HTTP_USER_AGENT'] ?? null,
-]);
+try {
+  $pdo = db();
+  $stmt = $pdo->prepare("
+    INSERT INTO reviews (name, company, email, rating, message, status, created_at, ip, user_agent)
+    VALUES (:name, :company, :email, :rating, :message, 'pending', :created_at, :ip, :ua)
+  ");
+  $stmt->execute([
+    ':name' => $name,
+    ':company' => $company ?: null,
+    ':email' => $email,
+    ':rating' => $rating,
+    ':message' => $message,
+    ':created_at' => gmdate('c'),
+    ':ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+    ':ua' => $_SERVER['HTTP_USER_AGENT'] ?? null,
+  ]);
 
-// Optional email notify (може да не работи навсякъде, но не пречи)
-if (defined('NOTIFY_EMAIL') && NOTIFY_EMAIL) {
-  $subject = 'Нов отзив (чака одобрение) - ' . SITE_NAME;
-  $body = "Име: $name\nФирма: " . ($company ?: '-') . "\nИмейл: $email\nОценка: $rating\n\nОтзив:\n$message\n";
-  @mail(NOTIFY_EMAIL, $subject, $body);
+  // Optional email notify (може да не работи навсякъде, но не пречи)
+  if (defined('NOTIFY_EMAIL') && NOTIFY_EMAIL) {
+    $siteName = defined('SITE_NAME') ? SITE_NAME : (defined('SITE_URL') ? SITE_URL : 'Сайт');
+    $subject = 'Нов отзив (чака одобрение) - ' . $siteName;
+    $body = "Име: $name\nФирма: " . ($company ?: '-') . "\nИмейл: $email\nОценка: $rating\n\nОтзив:\n$message\n";
+    @mail(NOTIFY_EMAIL, $subject, $body);
+  }
+} catch (Throwable $e) {
+  http_response_code(500);
+  echo json_encode([
+    'ok' => false,
+    'message' => 'Не успяхме да запишем отзива в момента. Моля, опитайте отново след малко.'
+  ]);
+  exit;
 }
 
 echo json_encode([
