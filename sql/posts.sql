@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS `posts` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `slug` VARCHAR(191) NOT NULL,
   `title` VARCHAR(255) NOT NULL,
+  `category` VARCHAR(80) NOT NULL DEFAULT 'schetovodstvo',
   `meta_description` VARCHAR(160) NOT NULL DEFAULT '',
   `excerpt` TEXT NOT NULL,
   `content_html` LONGTEXT NOT NULL,
