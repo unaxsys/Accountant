@@ -3,6 +3,7 @@
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/content_similarity.php';
 
 if (!defined('ADMIN_USER')) {
   $adminUserFromEnv = getenv('ADMIN_USER');
@@ -352,6 +353,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $article_flash = '';
+$article_flash_html = '';
 $article_edit = null;
 
 if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ?? '') === 'article_save')) {
@@ -383,6 +385,16 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     }
 
     $pdoPosts = posts_pdo();
+
+    $similar = findSimilarContent($pdoPosts, $content, 60);
+    if ($similar && (int)($similar['id'] ?? 0) !== $postId) {
+      $similarTitle = (string)($similar['title'] ?? '');
+      $articleUrl = '/blog/' . (string)($similar['slug'] ?? '');
+      $article_flash_html = 'Вече съществува подобна статия: ' . h($similarTitle)
+        . ' (<a href="' . h($articleUrl) . '" target="_blank" rel="noopener">виж статията</a>)';
+      throw new RuntimeException('Вече съществува подобна статия: ' . $similarTitle);
+    }
+
     $slug = unique_post_slug($pdoPosts, slugify_post($slugIn !== '' ? $slugIn : $title), $postId > 0 ? $postId : null);
 
     $coverImage = null;
@@ -450,7 +462,9 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     header('Location: admin-83xk2.php?tab=articles');
     exit;
   } catch (Throwable $e) {
-    $article_flash = $e->getMessage();
+    if ($article_flash_html === '') {
+      $article_flash = $e->getMessage();
+    }
   }
 }
 
@@ -765,7 +779,9 @@ $msg = (string)($_GET['msg'] ?? '');
   <?php if ($tab === 'articles'): ?>
     <h2>Статии</h2>
 
-    <?php if (!empty($article_flash)): ?>
+    <?php if (!empty($article_flash_html)): ?>
+      <div class="notice"><?= $article_flash_html ?></div>
+    <?php elseif (!empty($article_flash)): ?>
       <div class="notice"><?= h($article_flash) ?></div>
     <?php endif; ?>
 
