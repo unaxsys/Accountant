@@ -135,6 +135,14 @@ function utf8_cut(string $text, int $max): string {
 
 $ARTICLES_FILE = __DIR__ . '/articles.json';
 
+$BLOG_CATEGORIES = [
+  'schetovodstvo' => 'Счетоводство',
+  'dds' => 'ДДС',
+  'osigurovki' => 'Осигуровки',
+  'danatsi' => 'Данъци',
+  'trudovo-pravo' => 'Трудово право',
+];
+
 function load_articles_json(string $file): array {
   if (!file_exists($file)) return [];
   $raw = file_get_contents($file);
@@ -357,6 +365,7 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     $title = trim((string)($_POST['title'] ?? ''));
     $slugIn = trim((string)($_POST['slug'] ?? ''));
     $meta = trim((string)($_POST['meta_description'] ?? ''));
+    $category = trim((string)($_POST['category'] ?? 'schetovodstvo'));
     $excerpt = trim((string)($_POST['excerpt'] ?? ''));
     $content = sanitize_trusted_html(trim((string)($_POST['content_html'] ?? '')));
     $tags = trim((string)($_POST['tags'] ?? ''));
@@ -364,6 +373,10 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     $seoTitle = trim((string)($_POST['seo_title'] ?? ''));
     $focusKeyword = trim((string)($_POST['focus_keyword'] ?? ''));
     $coverAlt = trim((string)($_POST['cover_alt'] ?? ''));
+
+    if (!array_key_exists($category, $BLOG_CATEGORIES)) {
+      $category = 'schetovodstvo';
+    }
 
     if ($title === '' || $content === '') {
       throw new RuntimeException('Заглавие и съдържание са задължителни.');
@@ -408,19 +421,20 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
       if ($status === 'published' && empty($publishedAt)) $publishedAt = $now;
       if ($status === 'draft') $publishedAt = null;
 
-      $u = $pdoPosts->prepare('UPDATE posts SET slug=:slug,title=:title,meta_description=:meta,excerpt=:excerpt,content_html=:content,cover_image=:cover,tags=:tags,status=:status,published_at=:published_at,updated_at=:updated_at WHERE id=:id');
+      $u = $pdoPosts->prepare('UPDATE posts SET slug=:slug,title=:title,category=:category,meta_description=:meta,excerpt=:excerpt,content_html=:content,cover_image=:cover,tags=:tags,status=:status,published_at=:published_at,updated_at=:updated_at WHERE id=:id');
       $u->execute([
-        ':slug'=>$slug, ':title'=>$title, ':meta'=>utf8_cut($meta,160), ':excerpt'=>$excerpt,
+        ':slug'=>$slug, ':title'=>$title, ':category'=>$category, ':meta'=>utf8_cut($meta,160), ':excerpt'=>$excerpt,
         ':content'=>$content, ':cover'=>$coverImage, ':tags'=>$tags !== '' ? $tags : null,
         ':status'=>$status, ':published_at'=>$publishedAt, ':updated_at'=>$now, ':id'=>$postId,
       ]);
     } else {
       $publishedAt = $status === 'published' ? $now : null;
-      $i = $pdoPosts->prepare('INSERT INTO posts (title,seo_title,slug,meta_description,focus_keyword,excerpt,content_html,cover_image,cover_alt,tags,status,published_at,created_at) VALUES (:title,:seo_title,:slug,:meta,:focus_keyword,:excerpt,:content,:cover,:cover_alt,:tags,:status,:published_at,NOW())');
+      $i = $pdoPosts->prepare('INSERT INTO posts (title,seo_title,slug,category,meta_description,focus_keyword,excerpt,content_html,cover_image,cover_alt,tags,status,published_at,created_at) VALUES (:title,:seo_title,:slug,:category,:meta,:focus_keyword,:excerpt,:content,:cover,:cover_alt,:tags,:status,:published_at,NOW())');
       $i->execute([
         ':title' => $title,
         ':seo_title' => $seoTitle !== '' ? $seoTitle : $title,
         ':slug' => $slug,
+        ':category' => $category,
         ':meta' => utf8_cut($meta, 160),
         ':focus_keyword' => $focusKeyword !== '' ? $focusKeyword : null,
         ':excerpt' => $excerpt,
@@ -492,10 +506,11 @@ if (is_admin() && $_SERVER['REQUEST_METHOD'] === 'POST' && (($_POST['action'] ??
     $pdoPosts = posts_pdo();
     $baseSlug = unique_post_slug($pdoPosts, 'testova-statia');
     $now = date('Y-m-d H:i:s');
-    $stmt = $pdoPosts->prepare('INSERT INTO posts (slug,title,meta_description,excerpt,content_html,cover_image,tags,status,published_at,created_at,updated_at) VALUES (:slug,:title,:meta,:excerpt,:content,:cover,:tags,:status,:published_at,:created_at,:updated_at)');
+    $stmt = $pdoPosts->prepare('INSERT INTO posts (slug,title,category,meta_description,excerpt,content_html,cover_image,tags,status,published_at,created_at,updated_at) VALUES (:slug,:title,:category,:meta,:excerpt,:content,:cover,:tags,:status,:published_at,:created_at,:updated_at)');
     $stmt->execute([
       ':slug' => $baseSlug,
       ':title' => 'Тестова статия',
+      ':category' => 'schetovodstvo',
       ':meta' => 'Това е тестова SEO meta description за проверка на блога.',
       ':excerpt' => 'Кратко описание на тестовата статия за проверка на листинга.',
       ':content' => '<p>Това е тестово съдържание.</p>',
@@ -770,6 +785,15 @@ $msg = (string)($_GET['msg'] ?? '');
         <input id="slug" name="slug" data-maxlen="180" value="<?= h($article_edit['slug'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
         <div id="slug_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
 
+        <label>Категория *</label>
+        <select name="category" required style="width:100%;margin:6px 0 12px;">
+          <?php foreach ($BLOG_CATEGORIES as $slug => $name): ?>
+            <option value="<?= h($slug) ?>" <?= (($article_edit['category'] ?? 'schetovodstvo') === $slug) ? 'selected' : '' ?>>
+              <?= h($name) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+
         <label>SEO Title (30-60 символа)</label>
         <input id="seo_title" name="seo_title" data-maxlen="60" value="<?= h($article_edit['seo_title'] ?? '') ?>" style="width:100%;margin:6px 0 4px;">
         <div id="seo_title_remaining" class="muted" style="margin:0 0 12px;font-size:12px;"></div>
@@ -835,6 +859,9 @@ $msg = (string)($_GET['msg'] ?? '');
           </div>
           <div style="opacity:.85;margin-top:6px;">
             Slug: <code><?= h($a['slug'] ?? '') ?></code>
+          </div>
+          <div style="opacity:.85;margin-top:6px;">
+            Категория: <?= h($BLOG_CATEGORIES[$a['category'] ?? ''] ?? ($a['category'] ?? 'schetovodstvo')) ?>
           </div>
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
             <a class="btn" href="admin-83xk2.php?tab=articles&article_edit=<?= h($a['id'] ?? '') ?>">Редактирай</a>
