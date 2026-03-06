@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../posts_lib.php';
+require_once __DIR__ . '/../../includes/content_similarity.php';
 
 function ai_json(array $payload, int $status = 200): void {
   http_response_code($status);
@@ -7,6 +8,7 @@ function ai_json(array $payload, int $status = 200): void {
   echo json_encode($payload, JSON_UNESCAPED_UNICODE);
   exit;
 }
+
 
 function ai_read_secret(): string {
   if (defined('AI_PUBLISH_SECRET') && is_string(AI_PUBLISH_SECRET) && AI_PUBLISH_SECRET !== '') {
@@ -64,6 +66,15 @@ if ($cover !== '' && strpos($cover, '/uploads/') !== 0) {
 
 try {
   $pdo = posts_db();
+
+  $similar = findSimilarContent($pdo, $content, 60);
+  if ($similar) {
+    ai_json([
+      'ok' => false,
+      'error' => 'Similar content already exists',
+      'existing' => $similar,
+    ], 409);
+  }
 
   $baseSlug = slugify_post($slugInput !== '' ? $slugInput : $title);
   $slug = unique_post_slug($pdo, $baseSlug, null);
